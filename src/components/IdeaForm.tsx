@@ -54,7 +54,7 @@ export default function IdeaForm({
       const idea = await response.json();
       setFormData({ name: idea.name, description: idea.description });
       setIsGenerateModalOpen(false); // Close modal on success
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error generating idea:", error);
       setGenerationError(error.message || "An unknown error occurred.");
       setIsGenerateModalOpen(false); // Close modal on error as well
