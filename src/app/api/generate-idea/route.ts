@@ -4,18 +4,25 @@ import { NextResponse } from "next/server";
 // Inisialisasi Gemini client dengan API Key dari environment variables
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    console.log("Mulai proses generate ide...");
+    const body = await request.json();
+    const { interest } = body;
+
+    if (!interest) {
+      return NextResponse.json(
+        { error: "Bidang minat dibutuhkan." },
+        { status: 400 }
+      );
+    }
+
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash-latest",
     });
 
     const prompt = `
-      You are 'Architech', a highly experienced Chief Technology Officer (CTO) and Digital Product Architect. You excel at creating innovative, feasible, and impressive project blueprints for developers to build for their portfolios.
-      Your task is to generate ONE complete project idea blueprint based on a user's field of interest. The project idea must be unique, modern, and contain an AI-driven feature. Avoid generic clichés like 'To-Do App', 'Weather App', or 'Simple Blog'.
-    You will be given the following input:
-    - user_interest_area: A field of interest provided by the user (e.g., "E-commerce", "Education Technology", "Smart Home / IoT", "Healthcare", "Personal Finance").
+    You are 'Architech', a highly experienced Chief Technology Officer (CTO) and Digital Product Architect. You excel at creating innovative, feasible, and impressive project blueprints for developers to build for their portfolios.
+    Your task is to generate ONE complete project idea blueprint based on a user's field of interest. The user's field of interest is: "${interest}". The project idea must be unique, modern, and contain an AI-driven feature. Avoid generic clichés like 'To-Do App', 'Weather App', or 'Simple Blog'.
     Based on the user_interest_area, you must generate a project blueprint.
 
     The entire output MUST be a single, valid JSON object with two keys: "name" and "description".
@@ -40,27 +47,20 @@ export async function POST() {
     - **AI/API:** [Sebutkan model atau API yang digunakan, misal: Google Gemini API atau model dari Hugging Face] - [Alasan singkat dan relevan].
     `;
 
-    console.log("Prompt dibuat, mengirim request ke Gemini API...");
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    console.log("Respons dari Gemini API diterima.");
-
     let text = response.text();
 
-    // Membersihkan respons untuk memastikan formatnya adalah JSON string yang valid
-    console.log("Membersihkan teks respons...");
+    // Membersihkan dan mem-parsing output JSON dari model
     text = text
       .replace(/```json/g, "")
       .replace(/```/g, "")
       .trim();
+    const generatedIdea = JSON.parse(text);
 
-    console.log("Mem-parsing teks JSON...");
-    const idea = JSON.parse(text);
-
-    console.log("Mengirimkan ide yang sudah jadi ke client.");
-    return NextResponse.json(idea);
+    return NextResponse.json(generatedIdea);
   } catch (error) {
-    console.error("Terjadi error saat generate ide dari Gemini:", error);
+    console.error("Error generating idea from Gemini:", error);
     return NextResponse.json(
       { error: "Failed to generate idea" },
       { status: 500 }
