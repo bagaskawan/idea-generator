@@ -4,11 +4,20 @@ import { useState } from "react";
 import IdeaForm from "@/components/IdeaForm";
 import IdeaList from "@/components/IdeaList";
 import IdeaDetailModal from "@/components/IdeaDetailModal";
+import DevelopIdeaModal from "@/components/DevelopIdeaModal";
 import { useIdeaManager } from "@/utils/useIdeaManager";
 import { DataItem } from "@/utils/types";
 
 export default function Home() {
-  const { data, addItem, deleteItem } = useIdeaManager();
+  const {
+    data,
+    addItem,
+    deleteItem,
+    developIdea,
+    elaboration,
+    isLoading,
+    setElaboration,
+  } = useIdeaManager();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -16,7 +25,8 @@ export default function Home() {
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isDevelopModalOpen, setIsDevelopModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<DataItem | null>(null);
 
   const validateForm = () => {
@@ -42,12 +52,20 @@ export default function Home() {
 
   const showDetails = (item: DataItem) => {
     setSelectedItem(item);
-    setIsModalOpen(true);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleDevelopIdea = (item: DataItem) => {
+    setSelectedItem(item);
+    setIsDevelopModalOpen(true);
+    developIdea(item);
   };
 
   const handleCloseModal = () => {
-    setIsModalOpen(false);
+    setIsDetailModalOpen(false);
+    setIsDevelopModalOpen(false);
     setSelectedItem(null);
+    setElaboration(null); // Reset elaboration on close
   };
 
   return (
@@ -79,15 +97,25 @@ export default function Home() {
               data={data}
               deleteItem={deleteItem}
               showDetails={showDetails}
+              developIdea={handleDevelopIdea}
             />
           </div>
         </div>
       </div>
       {selectedItem && (
         <IdeaDetailModal
-          isOpen={isModalOpen}
+          isOpen={isDetailModalOpen}
           onClose={handleCloseModal}
           item={selectedItem}
+        />
+      )}
+      {isDevelopModalOpen && (
+        <DevelopIdeaModal
+          isOpen={isDevelopModalOpen}
+          onClose={handleCloseModal}
+          item={selectedItem}
+          elaboration={elaboration}
+          isLoading={isLoading}
         />
       )}
     </div>

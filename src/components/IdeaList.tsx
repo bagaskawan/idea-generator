@@ -11,19 +11,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { Calendar, Database, Eye, Trash2 } from "lucide-react";
+import { BrainCircuit, Database, Eye, Trash2 } from "lucide-react";
 import { DataItem } from "@/utils/types";
 
 interface IdeaListProps {
   data: DataItem[];
   deleteItem: (id: string) => void;
   showDetails: (item: DataItem) => void;
+  developIdea: (item: DataItem) => void;
 }
 
 export default function IdeaList({
   data,
   deleteItem,
   showDetails,
+  developIdea,
 }: IdeaListProps) {
   return (
     <Card className="border-none shadow-none bg-transparent">
@@ -58,9 +60,6 @@ export default function IdeaList({
                     <TableHead className="font-semibold text-gray-700">
                       Deskripsi
                     </TableHead>
-                    <TableHead className="font-semibold text-gray-700 w-[120px]">
-                      Created
-                    </TableHead>
                     <TableHead className="font-semibold text-gray-700 w-[80px] text-center">
                       Actions
                     </TableHead>
@@ -83,14 +82,16 @@ export default function IdeaList({
                           {item.description}
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-500 text-sm">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {item.createdAt.toLocaleDateString()}
-                        </div>
-                      </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => developIdea(item)}
+                            className="hover:bg-purple-50 hover:border-purple-300 hover:text-purple-700 transition-all duration-200"
+                          >
+                            <BrainCircuit className="w-4 h-4" />
+                          </Button>
                           <Button
                             size="sm"
                             variant="outline"

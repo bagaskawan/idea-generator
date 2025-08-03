@@ -59,5 +59,43 @@ export function useIdeaManager() {
     setData((prev) => prev.filter((item) => item.id !== id));
   };
 
-  return { data, addItem, deleteItem };
+  const [elaboration, setElaboration] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const developIdea = async (item: DataItem) => {
+    setIsLoading(true);
+    setElaboration(null);
+    try {
+      const response = await fetch("/api/develop-idea", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: item.name,
+          description: item.description,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch elaboration");
+      }
+      const result = await response.json();
+      setElaboration(result.elaboration);
+    } catch (error) {
+      console.error("Error developing idea:", error);
+      // Optionally, set an error state here to show in the UI
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return {
+    data,
+    addItem,
+    deleteItem,
+    developIdea,
+    elaboration,
+    isLoading,
+    setElaboration,
+  };
 }
