@@ -56,7 +56,11 @@ export default function IdeaForm({
       setIsGenerateModalOpen(false); // Close modal on success
     } catch (error: unknown) {
       console.error("Error generating idea:", error);
-      setGenerationError(error.message || "An unknown error occurred.");
+      if (error instanceof Error) {
+        setGenerationError(error.message);
+      } else {
+        setGenerationError("An unknown error occurred.");
+      }
       setIsGenerateModalOpen(false); // Close modal on error as well
     } finally {
       setIsGenerating(false);
