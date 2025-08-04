@@ -36,10 +36,6 @@ export default function IdeaDetailModal({
           <DialogTitle className="text-lg font-semibold text-gray-900">
             {item.name}
           </DialogTitle>
-          <DialogDescription className="flex items-center gap-2 pt-2 text-gray-500">
-            <Calendar className="w-4 h-4" />
-            Dibuat pada {item.createdAt.toLocaleDateString()}
-          </DialogDescription>
         </DialogHeader>
         <div className="text-sm text-gray-700 leading-relaxed prose max-w-none">
           <ReactMarkdown>{item.description}</ReactMarkdown>
