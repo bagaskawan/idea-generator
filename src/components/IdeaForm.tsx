@@ -33,8 +33,9 @@ export default function IdeaForm({
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null); // State for error messages
+  const [interest, setInterest] = useState("");
 
-  const handleGenerate = async (interest: string) => {
+  const handleGenerate = async () => {
     setIsGenerating(true);
     setGenerationError(null); // Clear previous errors
     try {
@@ -147,6 +148,8 @@ export default function IdeaForm({
         onClose={() => setIsGenerateModalOpen(false)}
         onGenerate={handleGenerate}
         isLoading={isGenerating}
+        interest={interest}
+        setInterest={setInterest}
       />
     </>
   );

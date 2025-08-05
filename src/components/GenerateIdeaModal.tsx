@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +17,10 @@ import { Loader2, Sparkles } from "lucide-react";
 interface GenerateIdeaModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onGenerate: (interest: string) => void;
+  onGenerate: () => void;
   isLoading: boolean;
+  interest: string;
+  setInterest: (value: string) => void;
 }
 
 export default function GenerateIdeaModal({
@@ -27,13 +28,12 @@ export default function GenerateIdeaModal({
   onClose,
   onGenerate,
   isLoading,
+  interest,
+  setInterest,
 }: GenerateIdeaModalProps) {
-  const [interest, setInterest] = useState("");
-
   const handleGenerateClick = () => {
     if (interest.trim()) {
-      onGenerate(interest);
-      setInterest(""); // Reset the input field
+      onGenerate();
     }
   };
 
@@ -60,6 +60,7 @@ export default function GenerateIdeaModal({
             onChange={(e) => setInterest(e.target.value)}
             placeholder="e.g., 'Aplikasi edukasi untuk anak'"
             className="mt-2"
+            disabled={isLoading}
           />
         </div>
         <DialogFooter>
