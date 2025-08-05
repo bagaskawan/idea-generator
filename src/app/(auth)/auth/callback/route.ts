@@ -1,25 +1,49 @@
+// src/app/(auth)/auth/callback/route.ts
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import createClient from "@/utils/supabase/server";
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-
-  // Extract auth code and optional redirect path
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
 
-  if (code) {
-    const supabase = await createClient();
+  // Dynamically build the redirect URL
+  const redirectTo = request.headers.get("origin") || "http://localhost:3000";
 
-    // Exchange the auth code for a session
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-
-    if (!error) {
-      // Redirect to the intended path or fallback to homepage
-      return NextResponse.redirect(`${origin}${next}`);
-    }
+  if (!code) {
+    return NextResponse.redirect(
+      `${redirectTo}/login?error=No authorization code provided`
+    );
   }
 
-  // Redirect to error page if code is missing or exchange fails
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`);
+  // 1️⃣ Await cookies() once
+  const cookieStore = await cookies();
+
+  // 2️⃣ Pass the resolved object to createServerClient
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options) {
+          cookieStore.set({ name, value, ...options });
+        },
+        remove(name: string, options) {
+          cookieStore.set({ name, value: "", ...options });
+        },
+      },
+    }
+  );
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (error) {
+    return NextResponse.redirect(
+      `${redirectTo}/login?error=${encodeURIComponent(error.message)}`
+    );
+  }
+
+  return NextResponse.redirect(`${redirectTo}/dashboard`);
 }
