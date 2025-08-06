@@ -4,11 +4,12 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams, origin } = new URL(request.url); // Gunakan origin dari request.url
   const code = searchParams.get("code");
 
-  // Dynamically build the redirect URL
-  const redirectTo = request.headers.get("origin") || "http://localhost:3000";
+  // Jangan gunakan header, gunakan origin dari URL request yang masuk.
+  // Ini jauh lebih andal di lingkungan serverless.
+  const redirectTo = origin;
 
   if (!code) {
     return NextResponse.redirect(
@@ -16,10 +17,8 @@ export async function GET(request: Request) {
     );
   }
 
-  // 1️⃣ Await cookies() once
   const cookieStore = await cookies();
 
-  // 2️⃣ Pass the resolved object to createServerClient
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -40,10 +39,12 @@ export async function GET(request: Request) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
+    // Redirect kembali ke halaman login di domain yang benar jika ada error
     return NextResponse.redirect(
       `${redirectTo}/login?error=${encodeURIComponent(error.message)}`
     );
   }
 
+  // Redirect ke dashboard di domain yang benar
   return NextResponse.redirect(`${redirectTo}/dashboard`);
 }

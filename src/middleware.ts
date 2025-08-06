@@ -68,7 +68,6 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// Konfigurasi path mana saja yang akan dijalankan oleh middleware.
 export const config = {
   matcher: [
     /*
