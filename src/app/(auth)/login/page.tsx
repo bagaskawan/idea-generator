@@ -41,7 +41,7 @@ export default function LoginPage() {
       {/* Left Side - Illustration */}
       <div className="relative hidden w-3/4 lg:block">
         <Image
-          src="/loginpage.png"
+          src="/login.png"
           alt="Illustration of a person analyzing charts on a screen"
           fill
           className="object-cover"
