@@ -77,7 +77,8 @@ export const config = {
      * - _next/static (file statis)
      * - _next/image (file optimasi gambar)
      * - favicon.ico (file favicon)
+     * - Semua file di dalam /public dengan ekstensi (misalnya .svg, .png, .jpg)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|_next/static|_next/image|.*\\..*|favicon.ico).*)",
   ],
 };
