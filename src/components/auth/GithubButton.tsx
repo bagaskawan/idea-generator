@@ -18,8 +18,8 @@ export function GithubButton({
   disabled,
 }: GithubButtonProps) {
   const handleClick = async () => {
-    onClick(); // Set state loading di parent component
-    await signInWithGithub(); // Jalankan server action
+    onClick();
+    // await signInWithGithub(); // Jalankan server action
   };
   return (
     <button

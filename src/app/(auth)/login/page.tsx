@@ -1,15 +1,15 @@
-'use client';
-import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { GoogleButton } from '@/components/auth/GoogleButton';
-import { GithubButton } from '@/components/auth/GithubButton';
-import { Inter } from 'next/font/google';
-import Image from 'next/image';
-import { signInWithGoogle, signInWithGithub } from '@/lib/auth-actions';
-import { useState } from 'react';
+"use client";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { GoogleButton } from "@/components/auth/GoogleButton";
+import { GithubButton } from "@/components/auth/GithubButton";
+import { Inter } from "next/font/google";
+import Image from "next/image";
+import { signInWithGoogle, signInWithGithub } from "@/lib/auth-actions";
+import { useState } from "react";
 const inter = Inter({
-  weight: ['700', '800'],
-  subsets: ['latin'],
+  weight: ["700", "800"],
+  subsets: ["latin"],
 });
 
 export default function LoginPage() {
@@ -21,7 +21,7 @@ export default function LoginPage() {
     try {
       await signInWithGoogle();
     } catch (error) {
-      console.error('Google sign-in failed:', error);
+      console.error("Google sign-in failed:", error);
       setIsGoogleLoading(false);
     }
   };
@@ -31,7 +31,7 @@ export default function LoginPage() {
     try {
       await signInWithGithub();
     } catch (error) {
-      console.error('GitHub sign-in failed:', error);
+      console.error("GitHub sign-in failed:", error);
       setIsGithubLoading(false);
     }
   };
@@ -57,12 +57,12 @@ export default function LoginPage() {
             <div className="space-y-4">
               <h1
                 className={cn(
-                  'text-5xl font-extrabold leading-[1.2] text-[#393E46]',
+                  "text-5xl font-extrabold leading-[1.2] text-[#393E46]",
                   inter.className
                 )}
               >
-                Move from a spark of inspiration to a full project{' '}
-                <span className="text-[#3D74B6]">BLUEPRINT</span> in{' '}
+                Move from a spark of inspiration to a full project{" "}
+                <span className="text-[#3D74B6]">BLUEPRINT</span> in{" "}
                 <span className="text-[#722323]">just minute</span>.
               </h1>
             </div>

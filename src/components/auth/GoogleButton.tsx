@@ -18,7 +18,6 @@ export function GoogleButton({
 }: GoogleButtonProps) {
   const handleClick = async () => {
     onClick();
-    await signInWithGoogle();
   };
   return (
     <button

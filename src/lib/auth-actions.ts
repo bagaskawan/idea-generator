@@ -37,12 +37,12 @@ export async function signInWithGoogle() {
     }
   );
   const headersList = await headers();
-  const origin = headersList.get("origin"); // Dapatkan URL origin secara dinamis
+  const origin = headersList.get("origin");
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${origin}/auth/callback`, // Gunakan URL dinamis
+      redirectTo: `${origin}/auth/callback`,
     },
   });
 
@@ -73,14 +73,13 @@ export async function signInWithGithub() {
     }
   );
 
-  // === PERBAIKAN ADA DI SINI ===
   const headersList = await headers();
-  const origin = headersList.get("origin"); // Dapatkan URL origin secara dinamis
+  const origin = headersList.get("origin");
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "github",
     options: {
-      redirectTo: `${origin}/auth/callback`, // Gunakan URL dinamis
+      redirectTo: `${origin}/auth/callback`,
     },
   });
 

@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react"; // Ikon untuk loading
+import { Loader2 } from "lucide-react";
 import useUser from "@/hooks/useUser";
 import { Button } from "@/components/ui/button";
-import { signout } from "@/lib/auth-actions"; // Pastikan path ini benar
+import { signout } from "@/lib/auth-actions";
 
 export default function Dashboard() {
   const { user, loading: isUserLoading, error: userError } = useUser();
@@ -21,12 +21,10 @@ export default function Dashboard() {
 
   // Handler untuk proses logout
   const handleSignOut = async () => {
-    setIsLoggingOut(true); // Mulai loading
+    setIsLoggingOut(true);
     await signout();
-    // Tidak perlu setIsLoggingOut(false) karena halaman akan redirect
   };
 
-  // Tampilkan loading state utama saat data user sedang diambil
   if (isUserLoading || !user) {
     return (
       <div className="flex h-screen flex-col items-center justify-center">
@@ -36,7 +34,6 @@ export default function Dashboard() {
     );
   }
 
-  // Tampilkan pesan error jika terjadi masalah
   if (userError) {
     return (
       <div className="flex h-screen flex-col items-center justify-center">
@@ -48,7 +45,6 @@ export default function Dashboard() {
     );
   }
 
-  // Mendapatkan nama tampilan dari metadata user atau dari email
   const displayName =
     user.user_metadata?.full_name ||
     user.user_metadata?.name ||
@@ -64,13 +60,13 @@ export default function Dashboard() {
 
       <Button
         onClick={handleSignOut}
-        disabled={isLoggingOut} // Disable tombol saat proses logout
+        disabled={isLoggingOut}
         variant="outline"
         size="lg"
-        className="w-32" // Beri lebar agar ukuran tidak berubah
+        className="w-32"
       >
         {isLoggingOut ? (
-          <Loader2 className="h-5 w-5 animate-spin" /> // Tampilkan ikon loading
+          <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
           "Logout" // Tampilkan teks biasa
         )}
