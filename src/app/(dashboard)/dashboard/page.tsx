@@ -12,17 +12,23 @@ export default function Dashboard() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
 
-  // Redirect ke halaman login jika user tidak ditemukan setelah loading selesai
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push("/login");
     }
   }, [user, isUserLoading, router]);
 
-  // Handler untuk proses logout
   const handleSignOut = async () => {
     setIsLoggingOut(true);
-    await signout();
+    const result = await signout();
+    if (result.success) {
+      router.push("/login");
+      router.refresh();
+    } else {
+      alert("Logout failed: " + result.error);
+      setIsLoggingOut(false);
+    }
+    // await signout();
   };
 
   if (isUserLoading || !user) {
@@ -65,11 +71,7 @@ export default function Dashboard() {
         size="lg"
         className="w-32"
       >
-        {isLoggingOut ? (
-          <Loader2 className="h-5 w-5 animate-spin" />
-        ) : (
-          "Logout" // Tampilkan teks biasa
-        )}
+        {isLoggingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : "Logout"}
       </Button>
     </div>
   );
