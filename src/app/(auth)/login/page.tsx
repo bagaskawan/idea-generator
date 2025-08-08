@@ -3,12 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { GithubButton } from "@/components/auth/GithubButton";
-import { Inter } from "next/font/google";
+import { Kodchasan } from "next/font/google";
 import Image from "next/image";
 import { signInWithGoogle, signInWithGithub } from "@/lib/auth-actions";
 import { useState } from "react";
-const inter = Inter({
-  weight: ["700", "800"],
+const kodchasan = Kodchasan({
+  weight: ["700"],
   subsets: ["latin"],
 });
 
@@ -58,7 +58,7 @@ export default function LoginPage() {
               <h1
                 className={cn(
                   "text-5xl font-extrabold leading-[1.2] text-[#393E46]",
-                  inter.className
+                  kodchasan.className
                 )}
               >
                 Move from a spark of inspiration to a full project{" "}
