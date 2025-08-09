@@ -3,18 +3,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import { GithubButton } from "@/components/auth/GithubButton";
-import { Kodchasan } from "next/font/google";
+
 import Image from "next/image";
 import { signInWithGoogle, signInWithGithub } from "@/lib/auth-actions";
-import { useState } from "react";
-const kodchasan = Kodchasan({
-  weight: ["700"],
-  subsets: ["latin"],
-});
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
+
 
 export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGithubLoading, setIsGithubLoading] = useState(false);
+  const { setTheme } = useTheme();
+
+  useEffect(() => {
+    setTheme("light");
+  }, [setTheme]);
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
@@ -50,20 +53,19 @@ export default function LoginPage() {
         />
       </div>
       {/* Right Side - Login Form */}
-      <div className="flex w-full items-center justify-center bg-white p-8 lg:w-1/4">
+      <div className="flex w-full items-center justify-center bg-background p-8 lg:w-1/4">
         <Card className="w-full max-w-md border-0 shadow-none">
           <CardContent className="px-0 space-y-8">
             {/* Header Text */}
             <div className="space-y-4">
               <h1
                 className={cn(
-                  "text-5xl font-extrabold leading-[1.2] text-[#393E46]",
-                  kodchasan.className
+                  "text-4xl font-extrabold leading-[1.2] text-foreground"
                 )}
               >
                 Move from a spark of inspiration to a full project{" "}
-                <span className="text-[#3D74B6]">BLUEPRINT</span> in{" "}
-                <span className="text-[#722323]">just minute</span>.
+                <span className="text-primary">BLUEPRINT</span> in{" "}
+                <span className="text-destructive">just minute</span>.
               </h1>
             </div>
 
@@ -73,13 +75,13 @@ export default function LoginPage() {
                 isLoading={isGoogleLoading}
                 onClick={handleGoogleSignIn}
                 disabled={isGoogleLoading || isGithubLoading}
-                className="w-full h-14 bg-white border-2 border-gray-200 text-gray-900 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 text-base font-medium"
+                className="w-full h-14 bg-background border-2 border-border text-foreground hover:bg-accent hover:border-primary transition-all duration-200 text-base font-medium"
               />
               <GithubButton
                 isLoading={isGithubLoading}
                 onClick={handleGithubSignIn}
                 disabled={isGoogleLoading || isGithubLoading}
-                className="w-full h-14 border-2 border-gray-200 text-gray-900 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 text-base font-medium"
+                className="w-full h-14 border-2 border-border text-foreground hover:bg-accent hover:border-primary transition-all duration-200 text-base font-medium"
               />
             </div>
           </CardContent>

@@ -1,39 +1,30 @@
 "use client";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Bell, Moon, Sun } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useTheme } from "next-themes";
 
-export default function Navbar() {
-  const { setTheme, theme } = useTheme();
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+const navItems = [
+  { name: "Dashboard", url: "/dashboard" },
+  { name: "Projects", url: "/idea" },
+];
+
+export function Navbar() {
+  const pathname = usePathname();
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center space-x-6 ml-auto">
-        <div className="flex items-center space-x-4">
+    <nav className="ml-8 flex items-center space-x-1 p-1 rounded-full">
+      {navItems.map((item) => (
+        <Link href={item.url} key={item.name}>
           <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
-            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            variant={pathname === item.url ? "default" : "ghost"}
+            size="sm"
+            className="rounded-full p-6"
           >
-            <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
+            {item.name}
           </Button>
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <Bell className="w-8 h-8 text-gray-600" />
-          </Button>
-
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-12 h-12">
-              <AvatarImage src="https://cdn.dribbble.com/users/4636531/avatars/normal/open-uri20200104-18489-1lxfo4c?1578133435" />
-              <AvatarFallback>KV</AvatarFallback>
-            </Avatar>
-          </div>
-        </div>
-      </div>
-    </div>
+        </Link>
+      ))}
+    </nav>
   );
 }

@@ -50,7 +50,12 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Daftar rute yang dapat diakses tanpa login
-  const publicRoutes = ["/", "/login", "/auth/callback"];
+  const publicRoutes = ["/login", "/auth/callback"];
+
+  // Jika pengguna sudah login dan mengakses halaman root, alihkan ke dashboard
+  if (session && pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
 
   // Cek apakah rute saat ini adalah rute yang dilindungi
   const isProtectedRoute = !publicRoutes.includes(pathname);
