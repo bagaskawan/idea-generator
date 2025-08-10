@@ -6,16 +6,19 @@ export type ProjectCardProps = {
   lastActivity: string;
   isStarred: boolean;
   isFloating?: boolean;
+  tags?: string[];
 };
 
 export const projects: ProjectCardProps[] = [
   {
     type: "default",
     title: "Video Campaign",
-    description: "Application Concept\nWebsite Concept",
+    description:
+      "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.",
     avatars: ["", ""],
     lastActivity: "Active recently",
     isStarred: true,
+    tags: ["Mobile", "Web", "IoT"],
   },
   {
     type: "default",
@@ -24,6 +27,7 @@ export const projects: ProjectCardProps[] = [
     avatars: ["", ""],
     lastActivity: "1 day ago",
     isStarred: true,
+    tags: ["Mobile", "Web", "IoT"],
   },
   {
     type: "internal",
@@ -31,14 +35,7 @@ export const projects: ProjectCardProps[] = [
     avatars: ["", "", ""],
     lastActivity: "1 day ago",
     isStarred: true,
-  },
-  {
-    type: "default",
-    title: "Growth Hacking",
-    description: "Ideas, challenges and tests",
-    avatars: ["", ""],
-    lastActivity: "2 days ago",
-    isStarred: false,
+    tags: ["Mobile", "Web", "IoT"],
   },
   {
     type: "default",
@@ -47,6 +44,7 @@ export const projects: ProjectCardProps[] = [
     avatars: ["", ""],
     lastActivity: "1 week ago",
     isStarred: false,
+    tags: ["Mobile", "Web", "IoT"],
   },
   {
     type: "default",
@@ -55,6 +53,6 @@ export const projects: ProjectCardProps[] = [
     avatars: ["", ""],
     lastActivity: "1 week ago",
     isStarred: false,
-    isFloating: true,
+    tags: ["Mobile", "Web", "IoT"],
   },
 ];

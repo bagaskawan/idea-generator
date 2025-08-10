@@ -11,7 +11,7 @@ export default function WelcomeMessage() {
     <div className="w-full p-10 flex justify-between items-center">
       <div>
         <h2 className="text-5xl font-bold tracking-tight">
-          Hi, {displayName || "Pengguna"}!
+          Hi, {displayName || "Guest"}!
         </h2>
         <p className="text-xl font-semibold mt-1"></p>
         <p className="text-sm opacity-80 mt-2">
