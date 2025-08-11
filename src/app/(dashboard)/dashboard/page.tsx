@@ -11,7 +11,7 @@ import {
 import { useEffect } from "react";
 import useUser from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
-import DashboardCMS from "@/components/dashboard/Dashboard";
+import Dashboard from "@/components/dashboard/Dashboard";
 
 export default function DashboardPage() {
   const { user, loading: isUserLoading, error: userError } = useUser();
@@ -23,5 +23,5 @@ export default function DashboardPage() {
     }
   }, [user, isUserLoading, router]);
 
-  return <DashboardCMS />;
+  return <Dashboard />;
 }

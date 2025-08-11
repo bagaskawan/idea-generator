@@ -1,10 +1,11 @@
+// src/components/custom/Header.tsx
 "use client";
+
 import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useTheme } from "next-themes";
 import SearchBar from "@/components/custom/SearchBar";
 import Image from "next/image";
-import { Navbar } from "@/components/custom/Navbar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,7 +19,6 @@ import useUser from "@/hooks/useUser";
 import FullScreenLoading from "@/components/FullScreenLoading";
 import { ThemeToggle } from "@/components/custom/ThemeToggle";
 import { format } from "date-fns";
-import { Separator } from "@/components/ui/separator";
 import ButtonGenerateIdea from "@/components/dashboard/ButtonGenerateIdea";
 
 export default function Header() {
@@ -52,23 +52,22 @@ export default function Header() {
   return (
     <>
       {isSigningOut && <FullScreenLoading text="Logout ..." />}
-      <header className="px-8 py-8">
-        <div className="flex items-center justify-between">
+      <header className="px-8 py-4 border-b border-border">
+        <div className="flex items-center justify-between gap-6">
           <Image
             alt="logo"
             src={
               resolvedTheme === "dark" ? "/hadelogowhite.png" : "/hadelogo.png"
             }
-            width={120}
-            height={40}
+            width={100}
+            height={32}
           />
-          <div className="ml-8 flex space-x-4">
+          <div className="flex-1 flex justify-center items-center gap-4">
             <SearchBar />
             <ButtonGenerateIdea />
-            {/* <Navbar /> */}
           </div>
-          <div className="flex items-center space-x-6 ml-auto">
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mr-4">
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span>{today}</span>
             </div>
             <div className="flex items-center space-x-4">
@@ -77,18 +76,25 @@ export default function Header() {
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center space-x-3 cursor-pointer">
                     <Avatar className="w-10 h-10">
-                      <AvatarImage src="https://cdn.dribbble.com/users/4636531/avatars/normal/open-uri20200104-18489-1lxfo4c?1578133435" />
-                      <AvatarFallback>KV</AvatarFallback>
+                      <AvatarImage src={user?.user_metadata?.avatar_url} />
+                      <AvatarFallback>
+                        {user?.user_metadata?.full_name?.charAt(0) ||
+                          user?.email?.charAt(0)?.toUpperCase() ||
+                          "U"}
+                      </AvatarFallback>
                     </Avatar>
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-70 p-4" align="end">
-                  {/* Bagian Profile */}
                   <div className="flex flex-col items-center py-2 mb-4">
                     <div className="relative">
                       <Avatar className="w-20 h-20">
-                        <AvatarImage src="https://cdn.dribbble.com/users/4636531/avatars/normal/open-uri20200104-18489-1lxfo4c?1578133435" />
-                        <AvatarFallback>BT</AvatarFallback>
+                        <AvatarImage src={user?.user_metadata?.avatar_url} />
+                        <AvatarFallback>
+                          {user?.user_metadata?.full_name?.slice(0, 2) ||
+                            user?.email?.slice(0, 2)?.toUpperCase() ||
+                            "US"}
+                        </AvatarFallback>
                       </Avatar>
                       <span className="absolute bottom-1 right-1 block h-4 w-4 rounded-full bg-green-500 border-2 border-white" />
                     </div>

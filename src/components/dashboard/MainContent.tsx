@@ -1,16 +1,44 @@
+// src/components/dashboard/MainContent.tsx
 "use client";
 
-import { projects } from "@/utils/dashboard/data";
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
+import { AddNewIdeaCard } from "./AddNewIdeaCard";
+import EmptyState from "@/components/dashboard/EmptyState";
+import {
+  AnimatedGrid,
+  AnimatedGridItem,
+} from "@/components/dashboard/AnimatedGrid";
+import { DataItem } from "@/utils/types";
+import { formatDistanceToNow } from "date-fns";
 
-export default function MainContent() {
+export default function MainContent({ projects }: { projects: DataItem[] }) {
+  if (!projects || projects.length === 0) {
+    return <EmptyState />;
+  }
+
   return (
-    <main>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {projects.map((project, index) => (
-          <ProjectCard key={index} {...project} />
-        ))}
-      </div>
-    </main>
+    <AnimatedGrid>
+      <AnimatedGridItem>
+        <AddNewIdeaCard />
+      </AnimatedGridItem>
+      {projects.map((project) => (
+        <AnimatedGridItem key={project.id}>
+          <ProjectCard
+            title={project.name}
+            description={project.description}
+            type="default"
+            tags={(project as any).tags || ["New"]}
+            lastActivity={`Created ${formatDistanceToNow(
+              new Date(project.createdAt),
+              {
+                addSuffix: true,
+              }
+            )}`}
+            avatars={[]}
+            isStarred={false}
+          />
+        </AnimatedGridItem>
+      ))}
+    </AnimatedGrid>
   );
 }

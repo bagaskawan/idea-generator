@@ -1,3 +1,4 @@
+// src/utils/useIdeaManager.ts
 "use client";
 
 import { useState, useEffect } from "react";
@@ -8,13 +9,18 @@ const LOCAL_STORAGE_KEY = "ideaData";
 
 export function useIdeaManager() {
   const [data, setData] = useState<DataItem[]>([]);
+  // State untuk loading awal dari localStorage
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  // State untuk loading saat berinteraksi dengan API (seperti developIdea)
+  const [isApiLoading, setIsApiLoading] = useState(false);
+  const [elaboration, setElaboration] = useState<string | null>(null);
 
-  // Load data from localStorage on initial component mount
+  // Efek untuk memuat data dari localStorage saat komponen pertama kali mount
   useEffect(() => {
     try {
       const storedData = localStorage.getItem(LOCAL_STORAGE_KEY);
       const loadedData = storedData
-        ? JSON.parse(storedData).map((item: DataItem) => ({
+        ? JSON.parse(storedData).map((item: any) => ({
             ...item,
             createdAt: new Date(item.createdAt),
           }))
@@ -24,26 +30,24 @@ export function useIdeaManager() {
           }));
       setData(loadedData);
     } catch (error) {
-      console.error(
-        "Failed to load data from localStorage, using initial data.",
-        error
-      );
+      console.error("Failed to load data from localStorage.", error);
       setData(
         initialData.map((item) => ({
           ...item,
           createdAt: new Date(item.createdAt),
         }))
       );
+    } finally {
+      setIsInitialLoading(false); // Selesai loading awal
     }
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
-  // Save data to localStorage whenever it changes
+  // Efek untuk menyimpan data ke localStorage setiap kali ada perubahan
   useEffect(() => {
-    // Avoid saving the initial empty array before data is loaded
-    if (data.length > 0) {
+    if (!isInitialLoading) {
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
     }
-  }, [data]);
+  }, [data, isInitialLoading]);
 
   const addItem = (name: string, description: string) => {
     const newItem: DataItem = {
@@ -59,18 +63,13 @@ export function useIdeaManager() {
     setData((prev) => prev.filter((item) => item.id !== id));
   };
 
-  const [elaboration, setElaboration] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-
   const developIdea = async (item: DataItem) => {
-    setIsLoading(true);
+    setIsApiLoading(true);
     setElaboration(null);
     try {
       const response = await fetch("/api/develop-idea", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: item.name,
           description: item.description,
@@ -83,19 +82,19 @@ export function useIdeaManager() {
       setElaboration(result.elaboration);
     } catch (error) {
       console.error("Error developing idea:", error);
-      // Optionally, set an error state here to show in the UI
     } finally {
-      setIsLoading(false);
+      setIsApiLoading(false);
     }
   };
 
   return {
     data,
-    addItem,
-    deleteItem,
-    developIdea,
+    isLoading: isInitialLoading, // Loading untuk data awal
+    isApiLoading, // Loading untuk aksi API
+    addItem, // <-- Sekarang addItem sudah dikembalikan
+    deleteItem, // <-- deleteItem juga
+    developIdea, // <-- developIdea juga
     elaboration,
-    isLoading,
     setElaboration,
   };
 }
