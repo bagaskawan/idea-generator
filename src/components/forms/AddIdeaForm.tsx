@@ -1,37 +1,45 @@
+// src/components/forms/AddIdeaForm.tsx
 "use client";
 
-import { useState } from "react";
+import { useTransition, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { addIdea } from "@/lib/idea-actions";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-interface AddIdeaFormProps {
-  onSubmit: (title: string, description: string) => Promise<void>;
-}
+export default function AddIdeaForm() {
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
 
-export default function AddIdeaForm({ onSubmit }: AddIdeaFormProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || isLoading) return;
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
 
-    setIsLoading(true);
-    try {
-      await onSubmit(title, description);
-      // Reset form upon successful submission
-      setTitle("");
-      setDescription("");
-    } catch (error) {
-      console.error("Error submitting idea:", error);
-      // You can add user-facing error notifications here
-    } finally {
-      setIsLoading(false);
+    if (!title.trim() || !description.trim()) {
+      toast.error("Both title and description are required.");
+      return;
     }
+
+    startTransition(async () => {
+      const result = await addIdea(formData);
+      if (result.success) {
+        toast.success("Idea added successfully!", {
+          description: "Your new idea has been saved to your collection.",
+        });
+        router.push("/dashboard");
+      } else {
+        toast.error("Failed to add idea", {
+          description: result.error || "An unexpected error occurred.",
+        });
+      }
+    });
   };
 
   return (
@@ -41,32 +49,34 @@ export default function AddIdeaForm({ onSubmit }: AddIdeaFormProps) {
           Capture Your Next Big Idea
         </h1>
         <p className="mt-3 text-md text-muted-foreground">
-          Every great project starts with a single thought. What&apos;s on your
-          mind?
+          Every great project starts with a single thought. What's on your mind?
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="w-full space-y-8">
-        <div className="">
+      <form
+        ref={formRef}
+        key={isPending ? "pending" : "ready"}
+        onSubmit={handleSubmit}
+        className="w-full space-y-8"
+      >
+        <div>
           <Input
             id="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            name="title"
             placeholder="e.g., 'AI-Powered Workout Planner'"
             className="h-14 px-4 text-lg focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-50"
-            disabled={isLoading}
+            disabled={isPending}
             autoFocus
           />
         </div>
 
-        <div className="">
+        <div>
           <Textarea
             id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            name="description"
             placeholder="Describe your idea in a few sentences. What problem does it solve? Who is it for?"
             className="min-h-[300px] p-4 text-base rounded-sm resize-none focus-visible:ring-2 focus-visible:ring-slate-900 dark:focus-visible:ring-slate-50"
-            disabled={isLoading}
+            disabled={isPending}
           />
         </div>
 
@@ -74,9 +84,9 @@ export default function AddIdeaForm({ onSubmit }: AddIdeaFormProps) {
           <Button
             type="submit"
             className="w-full font-medium rounded-full py-6"
-            disabled={isLoading || !title.trim() || !description.trim()}
+            disabled={isPending}
           >
-            {isLoading ? (
+            {isPending ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Submitting...
@@ -95,8 +105,8 @@ export default function AddIdeaForm({ onSubmit }: AddIdeaFormProps) {
                 type="button"
                 variant="outline"
                 size="lg"
-                className="px-2 py-6 rounded-full w-full border-dashed hover:border-solid hover:border-primary transition-all duration-300" // Tambahan style untuk tombol outline
-                disabled={isLoading}
+                className="px-2 py-6 rounded-full w-full border-dashed hover:border-solid hover:border-primary transition-all duration-300"
+                disabled={isPending}
               >
                 <Sparkles className="w-4 h-4 mr-2 text-yellow-500" />
                 Let AI generate an idea for you

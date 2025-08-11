@@ -9,8 +9,8 @@ export default function EmptyState() {
   const router = useRouter();
 
   return (
-    <div className="text-center py-20 px-6 rounded-lg border-2 border-dashed border-border flex flex-col items-center">
-      <Lightbulb className="w-16 h-16 text-yellow-400 mb-4" strokeWidth={1} />
+    <div className="text-center py-20 rounded-lg flex flex-col items-center">
+      <Lightbulb className="w-16 h-16 text-zinc-700 mb-4" strokeWidth={1} />
       <h2 className="text-2xl font-bold text-foreground mb-2">
         Let&apos;s Create Your First Brilliant Idea!
       </h2>
@@ -18,7 +18,7 @@ export default function EmptyState() {
         Your dashboard is currently empty. Start by adding a new idea manually
         or let our AI generate one for you.
       </p>
-      <Button size="lg" onClick={() => router.push("/idea")}>
+      <Button size="lg" onClick={() => router.push("/idea/new")}>
         Create an Idea
       </Button>
     </div>

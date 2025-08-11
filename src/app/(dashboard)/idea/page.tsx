@@ -5,7 +5,7 @@ import IdeaForm from "@/components/IdeaForm";
 import IdeaList from "@/components/IdeaList";
 import IdeaDetailModal from "@/components/IdeaDetailModal";
 import DevelopIdeaModal from "@/components/DevelopIdeaModal";
-import { useIdeaManager } from "@/utils/useIdeaManager";
+import { useIdeaManager } from "@/utils/idea/useIdeaManager";
 import { DataItem } from "@/utils/types";
 
 export default function Home() {

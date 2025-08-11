@@ -22,7 +22,7 @@ export const ProjectCard = ({
 
   return (
     <Card className={cardClasses}>
-      <div className="p-6 flex-grow flex flex-col">
+      <div className="mt-4 px-6 flex-grow flex flex-col">
         <div className="flex justify-between items-start">
           <h3 className="font-bold text-3xl tracking-tight text-card-foreground">
             {title}
@@ -55,7 +55,7 @@ export const ProjectCard = ({
             ))}
           </div>
         )}
-        <div className="mt-auto pt-6 flex justify-between items-center">
+        <div className="mt-auto w-full pt-6 flex justify-end items-center">
           <p className="text-xs text-muted-foreground">{lastActivity}</p>
         </div>
       </div>

@@ -20,13 +20,14 @@ import FullScreenLoading from "@/components/FullScreenLoading";
 import { ThemeToggle } from "@/components/custom/ThemeToggle";
 import { format } from "date-fns";
 import ButtonGenerateIdea from "@/components/dashboard/ButtonGenerateIdea";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Header() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const router = useRouter();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const today = format(new Date(), "EEEE, MMMM d, yyyy");
 
   useEffect(() => {
@@ -72,51 +73,57 @@ export default function Header() {
             </div>
             <div className="flex items-center space-x-4">
               <ThemeToggle />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <div className="flex items-center space-x-3 cursor-pointer">
-                    <Avatar className="w-10 h-10">
-                      <AvatarImage src={user?.user_metadata?.avatar_url} />
-                      <AvatarFallback>
-                        {user?.user_metadata?.full_name?.charAt(0) ||
-                          user?.email?.charAt(0)?.toUpperCase() ||
-                          "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-70 p-4" align="end">
-                  <div className="flex flex-col items-center py-2 mb-4">
-                    <div className="relative">
-                      <Avatar className="w-20 h-20">
+              {userLoading ? (
+                <Skeleton className="h-10 w-10 rounded-full" />
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="flex items-center space-x-3 cursor-pointer">
+                      <Avatar className="w-10 h-10">
                         <AvatarImage src={user?.user_metadata?.avatar_url} />
                         <AvatarFallback>
-                          {user?.user_metadata?.full_name?.slice(0, 2) ||
-                            user?.email?.slice(0, 2)?.toUpperCase() ||
-                            "US"}
+                          {user?.user_metadata?.full_name?.charAt(0) ||
+                            user?.email?.charAt(0)?.toUpperCase() ||
+                            "U"}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="absolute bottom-1 right-1 block h-4 w-4 rounded-full bg-green-500 border-2 border-white" />
                     </div>
-                    <p className="font-bold mt-3 text-center">
-                      {user?.user_metadata?.full_name || user?.email || "Guest"}
-                    </p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="p-4 cursor-pointer"
-                    onClick={() => router.push("/settings")}
-                  >
-                    <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="p-4 cursor-pointer"
-                    onClick={handleSignOut}
-                  >
-                    <span>Sign Out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-70 p-4" align="end">
+                    <div className="flex flex-col items-center py-2 mb-4">
+                      <div className="relative">
+                        <Avatar className="w-20 h-20">
+                          <AvatarImage src={user?.user_metadata?.avatar_url} />
+                          <AvatarFallback>
+                            {user?.user_metadata?.full_name?.slice(0, 2) ||
+                              user?.email?.slice(0, 2)?.toUpperCase() ||
+                              "US"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="absolute bottom-1 right-1 block h-4 w-4 rounded-full bg-green-500 border-2 border-white" />
+                      </div>
+                      <p className="font-bold mt-3 text-center">
+                        {user?.user_metadata?.full_name ||
+                          user?.email ||
+                          "Guest"}
+                      </p>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="p-4 cursor-pointer"
+                      onClick={() => router.push("/settings")}
+                    >
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="p-4 cursor-pointer"
+                      onClick={handleSignOut}
+                    >
+                      <span>Sign Out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>

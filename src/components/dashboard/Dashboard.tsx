@@ -8,14 +8,12 @@ import Header from "@/components/custom/Header";
 import MainContent from "@/components/dashboard/MainContent";
 import WelcomeMessage from "@/components/dashboard/WelcomeMessage";
 import FullScreenLoading from "@/components/FullScreenLoading";
-import { useIdeaManager } from "@/utils/useIdeaManager";
+import { useIdeaManager } from "@/utils/idea/useIdeaManager";
 
 export default function Dashboard() {
   const { user, loading: userLoading } = useUser();
   const { data: ideas, isLoading: ideasLoading } = useIdeaManager();
-
   const router = useRouter();
-
   const isLoading = userLoading || ideasLoading;
 
   useEffect(() => {
@@ -32,12 +30,9 @@ export default function Dashboard() {
     <div className="flex h-screen bg-background">
       <div className="flex-1 flex flex-col h-screen">
         <Header />
-        <main className="flex-1 overflow-y-auto p-8 space-y-8">
+        <main className="flex-1 overflow-y-auto mx-4 px-12 py-10 space-y-8">
           <WelcomeMessage />
           <div>
-            <h2 className="text-2xl font-bold tracking-tight mb-4">
-              Your Ideas
-            </h2>
             <MainContent projects={ideas} />
           </div>
         </main>
