@@ -1,4 +1,3 @@
-// src/utils/useIdeaManager.ts
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -14,6 +13,7 @@ export function useIdeaManager() {
   const [elaboration, setElaboration] = useState<string | null>(null);
   const supabase = createClient();
 
+  //List Data Project
   const fetchIdeas = useCallback(async () => {
     if (!user) {
       setIsLoading(true);

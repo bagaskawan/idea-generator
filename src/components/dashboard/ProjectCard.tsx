@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { getTagColor } from "@/utils/dashboard/tag-label";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
+import Link from "next/link";
 
 export const ProjectCard = ({
+  id,
   title,
   description,
   isFloating,
@@ -20,7 +22,7 @@ export const ProjectCard = ({
     isFloating && "relative transform-gpu scale-105 shadow-xl -rotate-2"
   );
 
-  return (
+  const cardContent = (
     <Card className={cardClasses}>
       <div className="mt-4 px-6 flex-grow flex flex-col">
         <div className="flex justify-between items-start">
@@ -61,4 +63,14 @@ export const ProjectCard = ({
       </div>
     </Card>
   );
+
+  if (id) {
+    return (
+      <Link href={`/idea/${id}`} className="no-underline">
+        {cardContent}
+      </Link>
+    );
+  }
+
+  return cardContent;
 };

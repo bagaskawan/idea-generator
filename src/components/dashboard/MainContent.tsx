@@ -2,7 +2,7 @@
 "use client";
 
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
-import { AddNewIdeaCard } from "./AddNewIdeaCard";
+import { AddNewIdeaCard } from "../idea/AddNewIdeaCard";
 import EmptyState from "@/components/dashboard/EmptyState";
 import {
   AnimatedGrid,
@@ -24,10 +24,11 @@ export default function MainContent({ projects }: { projects: DataItem[] }) {
       {projects.map((project) => (
         <AnimatedGridItem key={project.id}>
           <ProjectCard
+            id={project.id}
             title={project.name}
             description={project.description}
             type="default"
-            tags={(project as any).tags || ["New"]}
+            tags={project.tags || ["New"]}
             lastActivity={`Created ${formatDistanceToNow(
               new Date(project.createdAt),
               {

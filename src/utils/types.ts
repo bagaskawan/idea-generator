@@ -3,4 +3,7 @@ export interface DataItem {
   name: string;
   description: string;
   createdAt: Date;
+  tags: string[];
+  isStarred: boolean;
+  lastActivity: string;
 }

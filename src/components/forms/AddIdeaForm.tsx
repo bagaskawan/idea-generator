@@ -49,7 +49,8 @@ export default function AddIdeaForm() {
           Capture Your Next Big Idea
         </h1>
         <p className="mt-3 text-md text-muted-foreground">
-          Every great project starts with a single thought. What's on your mind?
+          very great project starts with a single thought. What&apos;s on your
+          mind?
         </p>
       </div>
 
