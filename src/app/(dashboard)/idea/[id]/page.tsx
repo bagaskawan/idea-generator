@@ -1,15 +1,14 @@
 import IdeaDetailView from "@/components/idea/IdeaDetailView";
 import { FullScreenModalWrapper } from "@/components/ui/FullScreenModalWrapper";
 
-// This is a Server Component
-export default async function IdeaDetailPage({
-  params,
-}: {
+type IdeaDetailPageProps = {
   params: { id: string };
-}) {
-  const { id } = params;
+};
 
-  // We pass the id to the client component that handles data fetching and state.
+export default async function IdeaDetailPage({ params }: IdeaDetailPageProps) {
+  const { id } = await params;
+  if (!id) return <div>Data Projek tidak ditemukan</div>;
+
   return (
     <FullScreenModalWrapper>
       <IdeaDetailView id={id} />

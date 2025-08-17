@@ -1,13 +1,5 @@
 "use client";
 
-import {
-  Sparkles,
-  LayoutDashboard,
-  BarChart3,
-  Settings,
-  Shield,
-} from "lucide-react";
-
 import { useEffect } from "react";
 import useUser from "@/hooks/useUser";
 import { useRouter } from "next/navigation";
