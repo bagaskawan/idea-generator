@@ -39,6 +39,42 @@ export async function addIdea(formData: FormData) {
   return { success: true, error: null };
 }
 
+// Fungsi untuk mengenerate ide dengan AI
+export async function generateIdea(formData: FormData) {
+  const cookieStore = cookies();
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "You must be logged in to add an idea." };
+  }
+
+  const title = formData.get("title") as string;
+  const description = formData.get("description") as string;
+  const tags = ["New"];
+
+  const { error } = await supabase.from("projects").insert({
+    user_id: user.id,
+    title: title,
+    description: description,
+    tags: tags,
+    is_starred: false,
+    last_activity: new Date().toISOString(),
+  });
+
+  if (error) {
+    console.error("Supabase insert error:", error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/dashboard");
+  return { success: true, error: null };
+}
+
+// Fungsi untuk mengupdate Ide
 export async function updateIdea(formData: FormData) {
   const cookie = cookies();
   const supabase = await createClient();

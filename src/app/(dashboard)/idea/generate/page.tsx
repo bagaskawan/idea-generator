@@ -1,12 +1,12 @@
 "use client";
 
-import AddIdeaForm from "@/components/forms/AddIdeaForm";
 import { FullScreenModalWrapper } from "@/components/ui/FullScreenModalWrapper";
+import GenerateIdeaFormDisplay from "@/components/forms/GenerateIdeaDisplay"; // Import the renamed component
 
 export default function GenerateIdeaPage() {
   return (
     <FullScreenModalWrapper>
-      <AddIdeaForm />
+      <GenerateIdeaFormDisplay />
     </FullScreenModalWrapper>
   );
 }

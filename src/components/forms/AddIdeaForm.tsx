@@ -2,13 +2,13 @@
 "use client";
 
 import { useTransition, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { addIdea } from "@/lib/idea-actions";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 export default function AddIdeaForm() {

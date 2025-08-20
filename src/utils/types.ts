@@ -6,4 +6,10 @@ export interface DataItem {
   tags: string[];
   isStarred: boolean;
   lastActivity: string;
+  status: string;
+  priority: string;
+  tech_stack: string[];
+  cover_image_url: string;
+  repo_url: string;
+  live_url: string;
 }

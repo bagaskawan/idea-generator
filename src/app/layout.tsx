@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import LayoutWrapper from "@/components/LayoutWrapper";
 import { Toaster } from "@/components/ui/sonner";
+import ClientOnly from "@/components/root/ClientOnly";
 
 export const metadata: Metadata = {
   title: "Idea Generator",
@@ -24,7 +25,9 @@ export default function RootLayout({
           disableTransitionOnChange
           storageKey="theme"
         >
-          <LayoutWrapper>{children}</LayoutWrapper>
+          <LayoutWrapper>
+            <ClientOnly>{children}</ClientOnly>
+          </LayoutWrapper>
           <Toaster richColors />
         </ThemeProvider>
       </body>
