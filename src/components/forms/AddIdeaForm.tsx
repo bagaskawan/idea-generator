@@ -104,7 +104,7 @@ export default function AddIdeaForm() {
             <Link href="/idea/generate" className="w-full">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="lg"
                 className="px-2 py-6 rounded-full w-full border-dashed hover:border-solid hover:border-primary transition-all duration-300"
                 disabled={isPending}

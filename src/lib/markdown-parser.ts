@@ -1,19 +1,14 @@
 // src/lib/markdown-parser.ts
 
 /**
- * Fungsi utilitas generik yang sudah DIPERBARUI untuk mengekstrak konten.
- * Regex ini sekarang lebih fleksibel dan bisa menangani spasi atau tanda **.
- * @param markdownText - String Markdown lengkap dari AI.
- * @param sectionTitle - Judul seksi yang ingin diekstrak (tanpa nomor).
- * @returns Konten dari seksi tersebut sebagai string.
+ * Versi FINAL dari fungsi extractSection.
+ * Regex ini sekarang sangat fleksibel: nomor dan bold pada judul seksi bersifat opsional.
  */
 function extractSection(markdownText: string, sectionTitle: string): string {
-  // Regex yang lebih fleksibel:
-  // - `##\\s*`: Mencari ## diikuti spasi (opsional)
-  // - `(?:\\*\\*)?`: Mencari tanda ** (opsional)
-  // - `\\d+\\.\\s*`: Mencari angka dan titik diikuti spasi (opsional)
+  // Regex ini mencari: ##, diikuti oleh bold (opsional), diikuti oleh nomor & titik (opsional),
+  // lalu judul seksi yang kita cari.
   const regex = new RegExp(
-    `##\\s*(?:\\*\\*)?\\d+\\.\\s*${sectionTitle}(?:\\*\\*)?[\\s\\S]*?(?=(?:##\\s*(?:\\*\\*)?\\d+\\.|$))`,
+    `##\\s*(?:\\*\\*)?(?:\\d+\\.\\s*)?${sectionTitle}(?:\\*\\*)?[\\s\\S]*?(?=(?:##\\s*(?:\\*\\*)?(?:\\d+\\.\\s*)?|$))`,
     "i"
   );
 
@@ -23,13 +18,13 @@ function extractSection(markdownText: string, sectionTitle: string): string {
 
   // Regex untuk menghapus baris heading dari hasil, juga lebih fleksibel
   const headingRegex = new RegExp(
-    `##\\s*(?:\\*\\*)?\\d+\\.\\s*${sectionTitle}(?:\\*\\*)?`,
+    `##\\s*(?:\\*\\*)?(?:\\d+\\.\\s*)?${sectionTitle}(?:\\*\\*)?`,
     "i"
   );
   return match[0].replace(headingRegex, "").trim();
 }
 
-// Fungsi-fungsi spesifik ini TIDAK PERLU DIUBAH, karena mereka menggunakan extractSection
+// Fungsi-fungsi di bawah ini tidak berubah, karena mereka menggunakan extractSection yang sudah pintar.
 export function getMainGoal(markdownText: string): string {
   return extractSection(
     markdownText,
@@ -57,12 +52,6 @@ interface TechStackItem {
   reason: string;
 }
 
-/**
- * Fungsi khusus untuk mem-parsing seksi Tech Stack menjadi array objek.
- * Regex di dalamnya juga sudah diperbarui.
- * @param markdownText - String Markdown lengkap dari AI.
- * @returns Array objek yang berisi detail tech stack.
- */
 export function parseTechStack(markdownText: string): TechStackItem[] {
   const sectionText = extractSection(
     markdownText,
@@ -74,16 +63,15 @@ export function parseTechStack(markdownText: string): TechStackItem[] {
   const lines = sectionText.split("\n").filter((line) => line.trim() !== "");
   const techStack: TechStackItem[] = [];
 
-  // Regex yang lebih fleksibel untuk mem-parsing setiap baris
   const lineRegex = /-\s*\*\*(.*?):\*\*\s*\[(.*?)]\s*-\s*\[(.*?)]/;
 
   lines.forEach((line) => {
     const match = line.match(lineRegex);
     if (match) {
       techStack.push({
-        name: match[1].trim(), // e.g., "Frontend"
-        tech: match[2].trim(), // e.g., "Next.js + TypeScript"
-        reason: match[3].trim(), // e.g., "Alasan..."
+        name: match[1].trim(),
+        tech: match[2].trim(),
+        reason: match[3].trim(),
       });
     }
   });
