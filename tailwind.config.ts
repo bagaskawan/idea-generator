@@ -1,13 +1,13 @@
-import {heroui} from '@heroui/theme';
-import type { Config } from 'tailwindcss'
+import { heroui } from "@heroui/theme";
+import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: 'class',
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./node_modules/@heroui/theme/dist/components/toggle.js"
+    "./node_modules/@heroui/theme/dist/components/toggle.js",
   ],
   theme: {
     container: {
@@ -19,7 +19,7 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['Mona Sans', 'sans-serif'],
+        sans: ["Mona Sans", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -63,12 +63,12 @@ const config: Config = {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: '0' },
+          from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: '0' },
+          to: { height: "0" },
         },
       },
       animation: {
@@ -77,7 +77,11 @@ const config: Config = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate"),heroui()],
-}
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography"),
+    heroui(),
+  ],
+};
 
-export default config
+export default config;

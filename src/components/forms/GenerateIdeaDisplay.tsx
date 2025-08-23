@@ -160,11 +160,11 @@ export default function GenerateIdeaDisplay() {
 
   // BAGIAN YANG DILENGKAPI #3: Result UI
   if (step === "result" && generatedIdea) {
-    console.log("Generated Idea:", generatedIdea);
     const mainGoal = getMainGoal(generatedIdea.description);
     const userFlow = getUserFlow(generatedIdea.description);
     const mvpFeatures = getMvpFeatures(generatedIdea.description);
     const techStack = parseTechStack(generatedIdea.description);
+    console.log("Generated Idea:", generatedIdea.description);
 
     return (
       // Ganti bagian "result" di dalam GenerateIdeaDisplay.tsx dengan ini

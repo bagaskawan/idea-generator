@@ -1,22 +1,12 @@
 // src/lib/markdown-parser.ts
 
-/**
- * Versi FINAL dari fungsi extractSection.
- * Regex ini sekarang sangat fleksibel: nomor dan bold pada judul seksi bersifat opsional.
- */
 function extractSection(markdownText: string, sectionTitle: string): string {
-  // Regex ini mencari: ##, diikuti oleh bold (opsional), diikuti oleh nomor & titik (opsional),
-  // lalu judul seksi yang kita cari.
   const regex = new RegExp(
     `##\\s*(?:\\*\\*)?(?:\\d+\\.\\s*)?${sectionTitle}(?:\\*\\*)?[\\s\\S]*?(?=(?:##\\s*(?:\\*\\*)?(?:\\d+\\.\\s*)?|$))`,
     "i"
   );
-
   const match = markdownText.match(regex);
-
   if (!match) return "Section not found.";
-
-  // Regex untuk menghapus baris heading dari hasil, juga lebih fleksibel
   const headingRegex = new RegExp(
     `##\\s*(?:\\*\\*)?(?:\\d+\\.\\s*)?${sectionTitle}(?:\\*\\*)?`,
     "i"
@@ -24,7 +14,6 @@ function extractSection(markdownText: string, sectionTitle: string): string {
   return match[0].replace(headingRegex, "").trim();
 }
 
-// Fungsi-fungsi di bawah ini tidak berubah, karena mereka menggunakan extractSection yang sudah pintar.
 export function getMainGoal(markdownText: string): string {
   return extractSection(
     markdownText,
@@ -42,7 +31,7 @@ export function getUserFlow(markdownText: string): string {
 export function getMvpFeatures(markdownText: string): string {
   return extractSection(
     markdownText,
-    "(MVP Features \\(Minimum Viable Product\\)|Fitur-Fitur MVP \\(Minimum Viable Product\\))"
+    "(MVP Features \\(Minimum Viable Product\\)|MVP Features|Fitur-Fitur MVP)"
   );
 }
 
@@ -63,15 +52,18 @@ export function parseTechStack(markdownText: string): TechStackItem[] {
   const lines = sectionText.split("\n").filter((line) => line.trim() !== "");
   const techStack: TechStackItem[] = [];
 
-  const lineRegex = /-\s*\*\*(.*?):\*\*\s*\[(.*?)]\s*-\s*\[(.*?)]/;
+  // --- PERBAIKAN UTAMA DI SINI ---
+  // Regex ini sekarang lebih fleksibel dan bisa menangkap format:
+  // "- **Nama:** Teknologi - (Alasan)"
+  const lineRegex = /-\s*\*\*(.*?):\*\*\s*([^-\(]+?)\s*-\s*\((.*?)\)/;
 
   lines.forEach((line) => {
     const match = line.match(lineRegex);
     if (match) {
       techStack.push({
-        name: match[1].trim(),
-        tech: match[2].trim(),
-        reason: match[3].trim(),
+        name: match[1].trim(), // e.g., "Backend"
+        tech: match[2].trim(), // e.g., "Node.js with Express.js"
+        reason: match[3].trim().replace(/\)$/, ""), // e.g., "Scalable and efficient..."
       });
     }
   });
