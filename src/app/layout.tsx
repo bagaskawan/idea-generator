@@ -5,6 +5,8 @@ import LayoutWrapper from "@/components/LayoutWrapper";
 import { Toaster } from "@/components/ui/sonner";
 import ClientOnly from "@/components/root/ClientOnly";
 import NextTopLoader from "nextjs-toploader";
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/react/style.css";
 
 export const metadata: Metadata = {
   title: "Idea Generator",

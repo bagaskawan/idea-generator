@@ -1,17 +1,12 @@
+// src/components/idea/IdeaDetailView.tsx
+// src/components/idea/IdeaDetailView.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { DataItem } from "@/utils/types";
 import FullScreenLoading from "@/components/FullScreenLoading";
-import ReactMarkdown from "react-markdown";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,8 +16,6 @@ import {
   Pencil,
   Trash2,
   BrainCircuit,
-  Star,
-  Tag,
   Calendar,
   Layers,
   Flag,
@@ -33,11 +26,18 @@ import { format } from "date-fns";
 import { getTagColor } from "@/utils/dashboard/tag-label";
 import { cn } from "@/lib/utils";
 
-type IdeaDetailViewProps = {
-  id: string;
-};
+import {
+  BasicTextStyleButton,
+  FormattingToolbar,
+  FormattingToolbarController,
+  useCreateBlockNote,
+} from "@blocknote/react";
+import { BlockNoteView } from "@blocknote/mantine";
+import "@blocknote/mantine/style.css";
+import { Block } from "@blocknote/core";
+import { AIMenuButton } from "@/components/ai/AIMenuButton";
 
-// Fungsi untuk mendapatkan warna badge status
+// ... (your helper functions getStatusColor, getPriorityColor remain the same) ...
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
     case "in progress":
@@ -50,7 +50,6 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Fungsi untuk mendapatkan warna badge prioritas
 const getPriorityColor = (priority: string) => {
   switch (priority?.toLowerCase()) {
     case "high":
@@ -63,6 +62,10 @@ const getPriorityColor = (priority: string) => {
   }
 };
 
+type IdeaDetailViewProps = {
+  id: string;
+};
+
 export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const supabase = createClient();
   const router = useRouter();
@@ -70,12 +73,14 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchIdea = async () => {
-      if (!id) return;
+  const editor = useCreateBlockNote();
 
+  useEffect(() => {
+    const fetchAndParseIdea = async () => {
+      if (!id || !editor) return;
+
+      setLoading(true);
       try {
-        setLoading(true);
         const { data, error } = await supabase
           .from("projects")
           .select("*")
@@ -89,7 +94,6 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
         }
 
         if (data) {
-          // Mapping data dari Supabase ke tipe DataItem
           const formattedData: DataItem = {
             id: data.id,
             name: data.title,
@@ -106,22 +110,24 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
             live_url: data.live_url,
           };
           setIdea(formattedData);
+
+          // Replaces the editor content with the fetched data
+          const blocks = await editor.tryParseMarkdownToBlocks(
+            data.description
+          );
+          editor.replaceBlocks(editor.topLevelBlocks, blocks);
         } else {
           throw new Error("Proyek tidak ditemukan.");
         }
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("An unknown error occurred.");
-        }
+      } catch (err: any) {
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchIdea();
-  }, [id, supabase]);
+    fetchAndParseIdea();
+  }, [id, editor, supabase]);
 
   if (loading) {
     return <FullScreenLoading text="Memuat detail ide..." />;
@@ -137,7 +143,6 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      {/* Header */}
       <header className="flex items-center justify-between mb-8">
         <Button
           variant="ghost"
@@ -147,37 +152,29 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Projects</span>
         </Button>
-        <div className="flex items-center gap-2">
-          <Button variant="outline">
-            <Pencil className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
-          <Button variant="destructive">
-            <Trash2 className="w-4 h-4 mr-2" />
-            Delete
-          </Button>
-        </div>
       </header>
-
-      {/* Konten Utama */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Kolom Kiri - Deskripsi dan Update */}
         <div className="lg:col-span-2 space-y-8">
           <Card>
             <CardHeader>
               <CardTitle className="text-4xl font-bold">{idea.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="prose dark:prose-invert max-w-none">
-                <ReactMarkdown>{idea.description}</ReactMarkdown>
-              </div>
+              <BlockNoteView editor={editor} editable={true} theme={"light"}>
+                <FormattingToolbarController
+                  formattingToolbar={() => (
+                    <FormattingToolbar>
+                      <BasicTextStyleButton basicTextStyle={"bold"} />
+                      <BasicTextStyleButton basicTextStyle={"italic"} />
+                      <BasicTextStyleButton basicTextStyle={"underline"} />
+                      <AIMenuButton />
+                    </FormattingToolbar>
+                  )}
+                />
+              </BlockNoteView>
             </CardContent>
           </Card>
-
-          {/* Nanti di sini untuk Project Updates */}
         </div>
-
-        {/* Kolom Kanan - Sidebar Metadata */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -215,7 +212,6 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
               </div>
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Tags & Tech</CardTitle>
@@ -233,7 +229,6 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
               ))}
             </CardContent>
           </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Actions & Links</CardTitle>
