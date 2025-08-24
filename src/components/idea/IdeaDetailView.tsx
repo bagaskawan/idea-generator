@@ -1,8 +1,7 @@
 // src/components/idea/IdeaDetailView.tsx
-// src/components/idea/IdeaDetailView.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { DataItem } from "@/utils/types";
 import FullScreenLoading from "@/components/FullScreenLoading";
@@ -13,8 +12,6 @@ import {
   ArrowLeft,
   Github,
   Link as LinkIcon,
-  Pencil,
-  Trash2,
   BrainCircuit,
   Calendar,
   Layers,
@@ -26,18 +23,23 @@ import { format } from "date-fns";
 import { getTagColor } from "@/utils/dashboard/tag-label";
 import { cn } from "@/lib/utils";
 
+// BlockNote Imports
 import {
-  BasicTextStyleButton,
-  FormattingToolbar,
-  FormattingToolbarController,
   useCreateBlockNote,
+  FormattingToolbarController,
+  FormattingToolbar,
+  BasicTextStyleButton,
+  BlockTypeSelect,
+  TextAlignButton,
+  CreateLinkButton,
+  ColorStyleButton,
 } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
+import { BlockNoteEditor } from "@blocknote/core";
 import "@blocknote/mantine/style.css";
-import { Block } from "@blocknote/core";
 import { AIMenuButton } from "@/components/ai/AIMenuButton";
 
-// ... (your helper functions getStatusColor, getPriorityColor remain the same) ...
+// Helper Functions
 const getStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
     case "in progress":
@@ -72,14 +74,18 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const [idea, setIdea] = useState<DataItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // State to hold the description, which will trigger the editor update
+  const [description, setDescription] = useState<string | null>(null);
 
   const editor = useCreateBlockNote();
 
+  // Effect to fetch data when the component mounts or ID changes
   useEffect(() => {
-    const fetchAndParseIdea = async () => {
-      if (!id || !editor) return;
+    const fetchIdea = async () => {
+      if (!id) return;
 
       setLoading(true);
+      setDescription(null); // Reset description on new ID
       try {
         const { data, error } = await supabase
           .from("projects")
@@ -110,12 +116,7 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
             live_url: data.live_url,
           };
           setIdea(formattedData);
-
-          // Replaces the editor content with the fetched data
-          const blocks = await editor.tryParseMarkdownToBlocks(
-            data.description
-          );
-          editor.replaceBlocks(editor.topLevelBlocks, blocks);
+          setDescription(data.description); // Set the description state
         } else {
           throw new Error("Proyek tidak ditemukan.");
         }
@@ -126,20 +127,27 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
       }
     };
 
-    fetchAndParseIdea();
-  }, [id, editor, supabase]);
+    fetchIdea();
+  }, [id, supabase]);
 
-  if (loading) {
-    return <FullScreenLoading text="Memuat detail ide..." />;
-  }
+  // Effect to update the editor when the description is available
+  useEffect(() => {
+    // Check that the editor & description are defined
+    if (editor && description) {
+      // Parse the markdown and update the editor
+      const populateEditor = async () => {
+        const blocks = await editor.tryParseMarkdownToBlocks(description);
+        editor.replaceBlocks(editor.topLevelBlocks, blocks);
+      };
+      populateEditor();
+    }
+  }, [description, editor]);
 
-  if (error) {
+  if (loading) return <FullScreenLoading text="Memuat detail ide..." />;
+  if (error)
     return <div className="text-red-500 text-center mt-20">{error}</div>;
-  }
-
-  if (!idea) {
+  if (!idea)
     return <div className="text-center mt-20">Proyek tidak ditemukan.</div>;
-  }
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -150,7 +158,7 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
           className="flex items-center gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Projects</span>
+          <span>Back to Project</span>
         </Button>
       </header>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -160,13 +168,42 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
               <CardTitle className="text-4xl font-bold">{idea.name}</CardTitle>
             </CardHeader>
             <CardContent>
-              <BlockNoteView editor={editor} editable={true} theme={"light"}>
+              <BlockNoteView
+                editor={editor}
+                editable={true}
+                theme={"light"}
+                formattingToolbar={false}
+              >
                 <FormattingToolbarController
                   formattingToolbar={() => (
                     <FormattingToolbar>
-                      <BasicTextStyleButton basicTextStyle={"bold"} />
-                      <BasicTextStyleButton basicTextStyle={"italic"} />
-                      <BasicTextStyleButton basicTextStyle={"underline"} />
+                      <BlockTypeSelect key={"blockTypeSelect"} />
+                      <BasicTextStyleButton
+                        key={"boldStyleButton"}
+                        basicTextStyle={"bold"}
+                      />
+                      <BasicTextStyleButton
+                        key={"italicStyleButton"}
+                        basicTextStyle={"italic"}
+                      />
+                      <BasicTextStyleButton
+                        key={"underlineStyleButton"}
+                        basicTextStyle={"underline"}
+                      />
+                      <TextAlignButton
+                        key={"textAlignLeftButton"}
+                        textAlignment={"left"}
+                      />
+                      <TextAlignButton
+                        key={"textAlignCenterButton"}
+                        textAlignment={"center"}
+                      />
+                      <TextAlignButton
+                        key={"textAlignRightButton"}
+                        textAlignment={"right"}
+                      />
+                      <ColorStyleButton key={"colorStyleButton"} />
+                      <CreateLinkButton key={"createLinkButton"} />
                       <AIMenuButton />
                     </FormattingToolbar>
                   )}

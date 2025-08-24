@@ -17,8 +17,19 @@ export function AIMenuButton() {
       return;
     }
 
-    const originalSelection = editor.getTextCursorPosition().selection;
-    editor.insertText("🤖 Regenerating...", { bold: true, italic: true });
+    const selection = editor.selection;
+    if (!selection) {
+      toast.info("Please select text to regenerate.");
+      return;
+    }
+
+    editor.insertInlineContent([
+      {
+        type: "text",
+        text: "🤖 Regenerating...",
+        styles: { bold: true, italic: true },
+      },
+    ]);
 
     try {
       const fullContext = await editor.blocksToMarkdownLossy(allBlocks);
@@ -28,17 +39,23 @@ export function AIMenuButton() {
         body: JSON.stringify({ selectedText, fullContext }),
       });
 
-      if (!response.ok) throw new Error("Failed to get response from AI.");
+      if (!response.ok) {
+        throw new Error("Failed to get response from AI.");
+      }
 
       const { regeneratedText } = await response.json();
-      editor.setTextCursorPosition(originalSelection);
-      editor.deleteText();
-      editor.insertText(regeneratedText);
+
+      editor.setTextCursorPosition(selection.start);
+      editor.delete(selection);
+      editor.insertInlineContent(regeneratedText);
     } catch (error: any) {
-      toast.error("AI Regeneration Failed", { description: error.message });
-      editor.setTextCursorPosition(originalSelection);
-      editor.deleteText();
-      editor.insertText(selectedText);
+      toast.error("AI Regeneration Failed", {
+        description: error.message,
+      });
+      // Restore original text if regeneration fails
+      editor.setTextCursorPosition(selection.start);
+      editor.delete(selection);
+      editor.insertInlineContent(selectedText);
     }
   };
 
