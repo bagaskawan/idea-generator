@@ -40,13 +40,15 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
         const isEditorEmpty =
           blocks.length === 1 &&
           blocks[0].type === "paragraph" &&
-          (blocks[0].content === undefined || (Array.isArray(blocks[0].content) && blocks[0].content.length === 0));
+          (blocks[0].content === undefined ||
+            (Array.isArray(blocks[0].content) &&
+              blocks[0].content.length === 0));
 
         if (isEditorEmpty && (idea.name || idea.description)) {
-          const fullContent = `# ${idea.name || ''}\n\n${idea.description || ''}`;
-          const newBlocks = await editor.tryParseMarkdownToBlocks(
-            fullContent
-          );
+          const fullContent = `# ${idea.name || ""}\n\n${
+            idea.description || ""
+          }`;
+          const newBlocks = await editor.tryParseMarkdownToBlocks(fullContent);
           editor.replaceBlocks(editor.topLevelBlocks, newBlocks);
         }
       } catch (error) {

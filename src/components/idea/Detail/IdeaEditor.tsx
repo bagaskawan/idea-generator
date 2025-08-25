@@ -8,9 +8,9 @@ import {
   CreateLinkButton,
   ColorStyleButton,
 } from "@blocknote/react";
-import { useTheme } from "next-themes";
 import { AIMenuButton } from "@/components/ai/AIMenuButton";
 import { BlockNoteEditor } from "@blocknote/core";
+import { useBlocknoteTheme } from "@/hooks/detail-idea/useBlockNoteTheme";
 
 interface IdeaEditorProps {
   editor: BlockNoteEditor;
@@ -21,13 +21,13 @@ export default function IdeaEditor({
   editor,
   isReadOnly = false,
 }: IdeaEditorProps) {
-  const { theme } = useTheme();
+  const theme = useBlocknoteTheme(); // <-- Gunakan hook untuk mendapatkan tema
 
   return (
     <BlockNoteView
       editor={editor}
       editable={!isReadOnly}
-      theme={theme === "dark" ? "dark" : "light"}
+      theme={theme} // <-- Terapkan tema dinamis
       formattingToolbar={false}
     >
       {!isReadOnly && (
