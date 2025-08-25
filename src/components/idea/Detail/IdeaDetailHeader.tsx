@@ -1,17 +1,29 @@
-import { Idea } from "@/types/idea";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
-interface Props {
-  idea: Idea;
-  setIdea: React.Dispatch<React.SetStateAction<Idea | null>>;
+interface IdeaDetailHeaderProps {
+  onBack: () => void;
+  isSaving?: boolean;
 }
 
-export default function IdeaHeader({ idea }: Props) {
+export default function IdeaDetailHeader({
+  onBack,
+  isSaving,
+}: IdeaDetailHeaderProps) {
   return (
-    <div className="flex items-center justify-between">
-      <h1 className="text-2xl font-bold">{idea.name}</h1>
-      <span className="px-3 py-1 text-sm rounded bg-gray-200">
-        {idea.status}
-      </span>
-    </div>
+    <header className="flex items-center justify-between mb-12">
+      <Button
+        variant="ghost"
+        onClick={onBack}
+        className="flex items-center gap-2"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span>Kembali ke Proyek</span>
+      </Button>
+
+      {isSaving && (
+        <span className="text-sm text-muted-foreground">Menyimpan...</span>
+      )}
+    </header>
   );
 }

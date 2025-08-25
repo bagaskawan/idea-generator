@@ -5,8 +5,11 @@ import LayoutWrapper from "@/components/LayoutWrapper";
 import { Toaster } from "@/components/ui/sonner";
 import ClientOnly from "@/components/root/ClientOnly";
 import NextTopLoader from "nextjs-toploader";
-import "@blocknote/core/fonts/inter.css";
+
 import "@blocknote/react/style.css";
+import { Inter } from "next/font/google";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Idea Generator",
@@ -21,12 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/@fontsource/mona-sans@5.0.12/index.css"
-        />
+        
       </head>
-      <body className="font-sans antialiased">
+      <body className={inter.className}>
         <NextTopLoader
           color="#2f2f2fff"
           initialPosition={0.08}

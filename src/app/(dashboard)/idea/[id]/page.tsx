@@ -1,4 +1,4 @@
-import IdeaDetailView from "@/components/idea/Detail/IdeaDetailView";
+import IdeaDetailView from "@/components/idea/detail/IdeaDetailView";
 import { FullScreenModalWrapper } from "@/components/ui/FullScreenModalWrapper";
 
 type IdeaDetailPageProps = {
