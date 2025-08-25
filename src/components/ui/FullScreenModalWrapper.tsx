@@ -24,7 +24,7 @@ export function FullScreenModalWrapper({
         </div>
       </Link>
       <div className="py-8">{children}</div>
-      <div className="fixed bottom-4 right-4">
+      <div className="fixed bottom-4 left-4">
         <ThemeToggle />
       </div>
     </div>

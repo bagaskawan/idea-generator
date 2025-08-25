@@ -12,8 +12,11 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Idea Generator",
+  title: "AI Architect Project",
   description: "Generate Your Idea Project",
+  icons: {
+    icon: "/metalhade.png",
+  },
 };
 
 export default function RootLayout({
@@ -23,9 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        
-      </head>
+      <head></head>
       <body className={inter.className}>
         <NextTopLoader
           color="#2f2f2fff"

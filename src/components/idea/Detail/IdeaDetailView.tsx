@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Custom hooks
@@ -37,18 +36,18 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
       if (!editor || !idea) return;
 
       try {
-        const currentMarkdown = await editor.blocksToMarkdownLossy(
-          editor.topLevelBlocks
-        );
+        const blocks = editor.topLevelBlocks;
+        const isEditorEmpty =
+          blocks.length === 1 &&
+          blocks[0].type === "paragraph" &&
+          (blocks[0].content === undefined || (Array.isArray(blocks[0].content) && blocks[0].content.length === 0));
 
-        if (
-          (!currentMarkdown || currentMarkdown.trim() === "") &&
-          idea.description
-        ) {
-          const blocks = await editor.tryParseMarkdownToBlocks(
-            idea.description
+        if (isEditorEmpty && (idea.name || idea.description)) {
+          const fullContent = `# ${idea.name || ''}\n\n${idea.description || ''}`;
+          const newBlocks = await editor.tryParseMarkdownToBlocks(
+            fullContent
           );
-          editor.replaceBlocks(editor.topLevelBlocks, blocks);
+          editor.replaceBlocks(editor.topLevelBlocks, newBlocks);
         }
       } catch (error) {
         console.error("Error syncing editor:", error);
@@ -74,24 +73,14 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
 
       <div className="w-full">
         <div className="space-y-8">
-          <h2 className="text-5xl font-bold mb-16 text-center text-[#5a1a1a]">
-            {loading ? (
-              <Skeleton className="h-12 w-1/2 mx-auto" />
-            ) : (
-              <strong>{idea?.name}</strong>
-            )}
-          </h2>
-
-          <CardContent>
-            {loading ? (
-              <div className="pt-4">
-                <Skeleton className="h-10 w-full mb-4" />
-                <Skeleton className="h-40 w-full" />
-              </div>
-            ) : (
-              <IdeaEditor editor={editor} />
-            )}
-          </CardContent>
+          {loading ? (
+            <div className="pt-4">
+              <Skeleton className="h-10 w-full mb-4" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+          ) : (
+            <IdeaEditor editor={editor} />
+          )}
         </div>
       </div>
     </div>

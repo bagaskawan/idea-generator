@@ -20,14 +20,27 @@ export const useAutoSave = (
 
     setIsSaving(true);
     try {
-      const markdown = await editor.blocksToMarkdownLossy(
-        editor.topLevelBlocks
-      );
+      const blocks = editor.topLevelBlocks;
+      let name = "";
+      let description = "";
+
+      if (blocks.length > 0) {
+        const titleBlock = blocks[0];
+        const titleContent =
+          titleBlock.content?.map((c: any) => c.text).join("") || "";
+        name = titleContent;
+
+        if (blocks.length > 1) {
+          const descriptionBlocks = blocks.slice(1);
+          description = await editor.blocksToMarkdownLossy(descriptionBlocks);
+        }
+      }
 
       const { error } = await supabase
         .from("projects")
         .update({
-          description: markdown,
+          title: name,
+          description: description,
           last_activity: new Date().toISOString(),
         })
         .eq("id", id);
