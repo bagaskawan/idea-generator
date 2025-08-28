@@ -104,7 +104,7 @@ export function useIdeaManager() {
     setIsApiLoading(true);
     setElaboration(null);
     try {
-      const response = await fetch("/api/develop-idea", {
+      const response = await fetch("/api/ai/develop-idea", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

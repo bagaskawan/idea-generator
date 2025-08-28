@@ -52,7 +52,7 @@ export default function GenerateIdeaDisplay() {
     setError(null);
 
     try {
-      const response = await fetch("/api/generate-questions", {
+      const response = await fetch("/api/ai/generate-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ interest }),
@@ -99,7 +99,7 @@ export default function GenerateIdeaDisplay() {
           return acc;
         }, {});
 
-        const response = await fetch("/api/generate-idea", {
+        const response = await fetch("/api/ai/generate-idea", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ interest, conversation }),

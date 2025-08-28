@@ -1,4 +1,4 @@
-// src/app/api/generate-idea/route.ts
+// src/app/api/ai/generate-idea/route.ts
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";

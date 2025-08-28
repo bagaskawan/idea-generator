@@ -33,7 +33,7 @@ export const AIMenu = createReactInlineContentSpec(
         ]);
 
         // Panggil API
-        const response = await fetch("/api/regenerate-section", {
+        const response = await fetch("/api/ai/regenerate-section", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ selectedText, fullContext }),

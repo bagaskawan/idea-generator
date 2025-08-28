@@ -39,7 +39,7 @@ export default function IdeaForm({
     setIsGenerating(true);
     setGenerationError(null); // Clear previous errors
     try {
-      const response = await fetch("/api/generate-idea", {
+      const response = await fetch("/api/ai/generate-idea", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

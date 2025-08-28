@@ -1,16 +1,10 @@
-// src/components/ai/AIMenuButton.tsx
+// src/components/ai/AIMenuDropdown.tsx
 "use client";
 
 import { useBlockNoteEditor } from "@blocknote/react";
-import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Block } from "@blocknote/core";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { useState } from "react";
 
 type AIAction = {
   label: string;
@@ -36,8 +30,10 @@ const contextualActions: Record<string, AIAction[]> = {
   ],
 };
 
-export function AIMenuButton() {
+type Props = { onClose: () => void };
+export function AIMenuDropdown({ onClose }: Props) {
   const editor = useBlockNoteEditor();
+  const [open, setOpen] = useState(false);
 
   const getCurrentSection = (): string => {
     const selection = editor.getSelection();
@@ -112,42 +108,32 @@ export function AIMenuButton() {
         id: loadingToast,
         description: error.message,
       });
+    } finally {
+      setOpen(false);
     }
+    onClose();
   };
 
   const sectionKey = getCurrentSection();
   const actionsToShow =
     contextualActions[sectionKey] || contextualActions.default;
 
-  /* ------------------------------------------------------------------ */
-  /* Render button-nya sebagai children dari FormattingToolbarController  */
-  /* ------------------------------------------------------------------ */
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className="bn-button bn-formatting-toolbar-button"
-          type="button"
-          aria-label="AI Actions"
-        >
-          <Sparkles className="w-5 h-5 text-purple-500" />
-        </button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="end" className="z-50">
+    <div className="absolute top-full left-0 mt-1 z-50">
+      <div className="bn-menu bn-menu-dropdown">
         {actionsToShow.map((action) => (
-          <DropdownMenuItem
+          <button
             key={action.requestType}
-            onSelect={(e) => {
-              e.preventDefault();
+            className="bn-menu-item"
+            onClick={() => {
               handleAIAction(action.requestType);
+              onClose();
             }}
-            className="cursor-pointer"
           >
             {action.label}
-          </DropdownMenuItem>
+          </button>
         ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </div>
+    </div>
   );
 }

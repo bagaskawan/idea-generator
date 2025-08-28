@@ -8,9 +8,9 @@ import {
   CreateLinkButton,
   ColorStyleButton,
 } from "@blocknote/react";
-import { AIMenuButton } from "@/components/ai/AIMenuButton";
 import { BlockNoteEditor } from "@blocknote/core";
 import { useBlocknoteTheme } from "@/hooks/detail-idea/useBlockNoteTheme";
+import { AIMenuButton } from "@/components/ai/AIMenuButton";
 
 interface IdeaEditorProps {
   editor: BlockNoteEditor;
