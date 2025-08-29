@@ -1,16 +1,18 @@
+// src/components/idea/detail/IdeaEditor.tsx
 import { BlockNoteView } from "@blocknote/mantine";
 import {
   FormattingToolbarController,
   FormattingToolbar,
-  BasicTextStyleButton,
   BlockTypeSelect,
+  BasicTextStyleButton,
   TextAlignButton,
   CreateLinkButton,
   ColorStyleButton,
 } from "@blocknote/react";
+// import { AIToolbarController } from "@blocknote/xl-ai";
+import { AIMenuController, AIToolbarButton } from "@blocknote/xl-ai";
 import { BlockNoteEditor } from "@blocknote/core";
 import { useBlocknoteTheme } from "@/hooks/detail-idea/useBlockNoteTheme";
-import { AIMenuButton } from "@/components/ai/AIMenuButton";
 
 interface IdeaEditorProps {
   editor: BlockNoteEditor;
@@ -21,13 +23,13 @@ export default function IdeaEditor({
   editor,
   isReadOnly = false,
 }: IdeaEditorProps) {
-  const theme = useBlocknoteTheme(); // <-- Gunakan hook untuk mendapatkan tema
+  const theme = useBlocknoteTheme();
 
   return (
     <BlockNoteView
       editor={editor}
       editable={!isReadOnly}
-      theme={theme} // <-- Terapkan tema dinamis
+      theme={theme}
       formattingToolbar={false}
     >
       {!isReadOnly && (
@@ -35,34 +37,24 @@ export default function IdeaEditor({
           formattingToolbar={() => (
             <FormattingToolbar>
               <BlockTypeSelect key="blockTypeSelect" />
+              <BasicTextStyleButton key="bold" basicTextStyle="bold" />
+              <BasicTextStyleButton key="italic" basicTextStyle="italic" />
               <BasicTextStyleButton
-                key="boldStyleButton"
-                basicTextStyle="bold"
-              />
-              <BasicTextStyleButton
-                key="italicStyleButton"
-                basicTextStyle="italic"
-              />
-              <BasicTextStyleButton
-                key="underlineStyleButton"
+                key="underline"
                 basicTextStyle="underline"
               />
-              <TextAlignButton key="textAlignLeftButton" textAlignment="left" />
-              <TextAlignButton
-                key="textAlignCenterButton"
-                textAlignment="center"
-              />
-              <TextAlignButton
-                key="textAlignRightButton"
-                textAlignment="right"
-              />
-              <ColorStyleButton key="colorStyleButton" />
-              <CreateLinkButton key="createLinkButton" />
-              <AIMenuButton />
+              <TextAlignButton key="left" textAlignment="left" />
+              <TextAlignButton key="center" textAlignment="center" />
+              <TextAlignButton key="right" textAlignment="right" />
+              <ColorStyleButton key="color" />
+              <CreateLinkButton key="link" />
+
+              <AIToolbarButton />
             </FormattingToolbar>
           )}
         />
       )}
+      {!isReadOnly && <AIMenuController />}
     </BlockNoteView>
   );
 }

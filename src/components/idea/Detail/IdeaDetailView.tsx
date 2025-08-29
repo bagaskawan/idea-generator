@@ -16,6 +16,11 @@ import IdeaEditor from "@/components/idea/detail/IdeaEditor";
 // BlockNote
 import { useCreateBlockNote } from "@blocknote/react";
 import "@blocknote/mantine/style.css";
+import "@blocknote/xl-ai/style.css";
+
+import { aiExtension } from "@/lib/blocknote-ai";
+import { en } from "@blocknote/core/locales"; // Dictionary core (ganti dengan bahasa lain jika perlu, misalnya id untuk Indonesia)
+import { en as aiEn } from "@blocknote/xl-ai/locales";
 
 type IdeaDetailViewProps = {
   id: string;
@@ -24,7 +29,13 @@ type IdeaDetailViewProps = {
 export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const router = useRouter();
   const { idea, loading, error } = useIdea(id);
-  const editor = useCreateBlockNote();
+  const editor = useCreateBlockNote({
+    extensions: [aiExtension],
+    dictionary: {
+      ...en,
+      ai: aiEn,
+    },
+  });
   const isRealtimeUpdate = useRef(false);
 
   const { isSaving } = useAutoSave(editor, id, isRealtimeUpdate);

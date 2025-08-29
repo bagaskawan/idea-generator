@@ -5,6 +5,8 @@ import LayoutWrapper from "@/components/LayoutWrapper";
 import { Toaster } from "@/components/ui/sonner";
 import ClientOnly from "@/components/root/ClientOnly";
 import NextTopLoader from "nextjs-toploader";
+import "@blocknote/mantine/style.css";
+import "@blocknote/xl-ai/style.css";
 
 import "@blocknote/react/style.css";
 import { Inter } from "next/font/google";
