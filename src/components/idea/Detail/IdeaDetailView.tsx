@@ -1,6 +1,7 @@
+// src/components/idea/detail/IdeaDetailView.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -18,26 +19,29 @@ import { useCreateBlockNote } from "@blocknote/react";
 import "@blocknote/mantine/style.css";
 import "@blocknote/xl-ai/style.css";
 
-import { aiExtension } from "@/lib/blocknote-ai";
 import { en } from "@blocknote/core/locales"; // Dictionary core (ganti dengan bahasa lain jika perlu, misalnya id untuk Indonesia)
 import { en as aiEn } from "@blocknote/xl-ai/locales";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createAIExtension } from "@blocknote/xl-ai";
 
 type IdeaDetailViewProps = {
   id: string;
 };
 
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY!,
+});
+const model = google("gemini-1.5-flash-latest");
+
 export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const router = useRouter();
   const { idea, loading, error } = useIdea(id);
+  const [editorKey, setEditorKey] = useState(0);
   const editor = useCreateBlockNote({
-    extensions: [aiExtension],
-    dictionary: {
-      ...en,
-      ai: aiEn,
-    },
+    dictionary: { ...en, ai: aiEn },
+    extensions: [createAIExtension({ model })],
   });
   const isRealtimeUpdate = useRef(false);
-
   const { isSaving } = useAutoSave(editor, id, isRealtimeUpdate);
   useRealtimeUpdates(id, editor, isRealtimeUpdate);
 

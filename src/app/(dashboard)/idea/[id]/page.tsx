@@ -5,8 +5,8 @@ type IdeaDetailPageProps = {
   params: { id: string };
 };
 
-export default function IdeaDetailPage({ params }: IdeaDetailPageProps) {
-  const { id } = params;
+export default async function IdeaDetailPage({ params }: IdeaDetailPageProps) {
+  const { id } = await params;
   if (!id) return <div>Data Projek tidak ditemukan</div>;
 
   return (
