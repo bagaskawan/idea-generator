@@ -1,0 +1,7 @@
+/* Gunakan class name sederhana */
+.bn-container[data-changing-font-demo] .bn-editor * {
+  font-family: "Barlow", sans-serif !important;
+}
+.bn-block-outer {
+  line-height: 1.7 !important;
+}
