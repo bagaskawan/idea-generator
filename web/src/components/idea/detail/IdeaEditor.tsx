@@ -1,31 +1,21 @@
+// src/components/IdeaEditor.tsx
+
 "use client";
 
 import { useBlocknoteTheme } from "@/hooks/detail-idea/useBlockNoteTheme";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { BlockNoteEditor, filterSuggestionItems } from "@blocknote/core";
-// import "@blocknote/core/fonts/inter.css";
+import { type BlockNoteEditor } from "@blocknote/core";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
-import {
-  FormattingToolbar,
-  FormattingToolbarController,
-  SuggestionMenuController,
-  getDefaultReactSlashMenuItems,
-  getFormattingToolbarItems,
-} from "@blocknote/react";
-import "@blocknote/react/style.css";
-import {
-  AIMenuController,
-  AIToolbarButton,
-  getAISlashMenuItems,
-} from "@blocknote/xl-ai";
-import "@blocknote/xl-ai/style.css";
+import { AIMenuController } from "@blocknote/xl-ai";
 import "@/styles/styles.css";
 
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY!,
-});
-const model = google("gemini-1.5-flash-latest");
+import {
+  CustomAIMenu,
+  FormattingToolbarWithAI,
+  SlashMenuWithAI,
+} from "./EditorComponents";
+import { useParentHeaderDetector } from "@/hooks/detail-idea/useParentHeaderDetector";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface IdeaEditorProps {
   editor: BlockNoteEditor;
@@ -37,6 +27,17 @@ export default function IdeaEditor({
   isReadOnly = false,
 }: IdeaEditorProps) {
   const theme = useBlocknoteTheme();
+  const { debouncedSelectionChange } = useParentHeaderDetector(editor);
+
+  if (!editor) {
+    return (
+      <div className="pt-4 space-y-4">
+        <Skeleton className="h-10 w-3/4" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    );
+  }
+
   return (
     <div className="w-full p-4 mb-4 font-barlow">
       <BlockNoteView
@@ -45,46 +46,12 @@ export default function IdeaEditor({
         slashMenu={false}
         editable={!isReadOnly}
         theme={theme}
-        data-changing-font-demo
+        onSelectionChange={debouncedSelectionChange}
       >
-        <AIMenuController />
+        <AIMenuController aiMenu={CustomAIMenu} />
         <FormattingToolbarWithAI />
         <SlashMenuWithAI editor={editor} />
       </BlockNoteView>
     </div>
-  );
-}
-
-function FormattingToolbarWithAI() {
-  return (
-    <FormattingToolbarController
-      formattingToolbar={() => (
-        <FormattingToolbar>
-          {...getFormattingToolbarItems()}
-          <AIToolbarButton />
-        </FormattingToolbar>
-      )}
-    />
-  );
-}
-
-function SlashMenuWithAI({
-  editor,
-}: {
-  editor: BlockNoteEditor<any, any, any>;
-}) {
-  return (
-    <SuggestionMenuController
-      triggerCharacter="/"
-      getItems={async (query) =>
-        filterSuggestionItems(
-          [
-            ...getDefaultReactSlashMenuItems(editor),
-            ...getAISlashMenuItems(editor),
-          ],
-          query
-        )
-      }
-    />
   );
 }
