@@ -18,7 +18,7 @@ export default function EmptyState() {
         Your dashboard is currently empty. Start by adding a new idea manually
         or let our AI generate one for you.
       </p>
-      <Button size="lg" onClick={() => router.push("/idea/new")}>
+      <Button size="lg" onClick={() => router.push("/idea/generate")}>
         Create an Idea
       </Button>
     </div>

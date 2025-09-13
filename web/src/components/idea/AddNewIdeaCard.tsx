@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 
 export function AddNewIdeaCard() {
   return (
-    <Link href="/idea/new" className="h-full">
+    <Link href="/idea/generate" className="h-full">
       <Card
         className="bg-card rounded-lg border-2 border-dashed border-border hover:border-solid hover:border-primary 
                    hover:shadow-lg transition-all duration-300 cursor-pointer 

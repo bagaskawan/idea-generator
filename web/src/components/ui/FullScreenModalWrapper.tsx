@@ -23,7 +23,7 @@ export function FullScreenModalWrapper({
           <ButtonX className="text-primary-foreground" />
         </div>
       </Link>
-      <div className="py-8">{children}</div>
+      <div className="pt-8">{children}</div>
       <div className="fixed bottom-4 left-4">
         <ThemeToggle />
       </div>

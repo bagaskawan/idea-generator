@@ -4,9 +4,19 @@ import { revalidatePath } from "next/cache";
 import createClient from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 
-// Fungsi untuk menambah ide (sudah ada)
-export async function addIdea(formData: FormData) {
-  const cookieStore = cookies();
+interface GeneratedBlueprint {
+  projectData: {
+    title: string;
+    problem_statement: string;
+    target_audience: any;
+    success_metrics: any;
+    tech_stack: string[];
+  };
+  workbenchContent: string;
+}
+
+// Fungsi addIdea yang sudah diperbarui
+export async function addIdea(blueprint: GeneratedBlueprint) {
   const supabase = await createClient();
 
   const {
@@ -17,26 +27,46 @@ export async function addIdea(formData: FormData) {
     return { success: false, error: "You must be logged in to add an idea." };
   }
 
-  const title = formData.get("title") as string;
-  const description = formData.get("description") as string;
-  const tags = ["New"];
+  // 1. Insert ke tabel 'projects' (metadata)
+  const { data: newProject, error: projectError } = await supabase
+    .from("projects")
+    .insert({
+      user_id: user.id,
+      title: blueprint.projectData.title,
+      problem_statement: blueprint.projectData.problem_statement,
+      target_audience: blueprint.projectData.target_audience,
+      success_metrics: blueprint.projectData.success_metrics,
+      tech_stack: blueprint.projectData.tech_stack,
+      tags: ["AI-Generated"],
+    })
+    .select()
+    .single();
 
-  const { error } = await supabase.from("projects").insert({
-    user_id: user.id,
-    title: title,
-    description: description,
-    tags: tags,
-    is_starred: false,
-    last_activity: new Date().toISOString(),
-  });
+  if (projectError) {
+    console.error("Supabase insert error (projects):", projectError);
+    return { success: false, error: projectError.message };
+  }
 
-  if (error) {
-    console.error("Supabase insert error:", error);
-    return { success: false, error: error.message };
+  const newProjectId = newProject.id;
+
+  // 2. Insert ke tabel 'workbench_content' (konten naratif)
+  const { error: workbenchError } = await supabase
+    .from("workbench_content")
+    .insert({
+      project_id: newProjectId,
+      // Simpan konten workbench sebagai JSON
+      content: { markdown: blueprint.workbenchContent },
+    });
+
+  if (workbenchError) {
+    console.error("Supabase insert error (workbench):", workbenchError);
+    // Idealnya, Anda bisa menghapus proyek yang sudah dibuat jika langkah ini gagal (rollback)
+    return { success: false, error: workbenchError.message };
   }
 
   revalidatePath("/dashboard");
-  return { success: true, error: null };
+  // Kembalikan ID proyek agar bisa redirect
+  return { success: true, error: null, projectId: newProjectId };
 }
 
 // Fungsi untuk mengenerate ide dengan AI

@@ -13,7 +13,7 @@ import {
   CustomAIMenu,
   FormattingToolbarWithAI,
   SlashMenuWithAI,
-} from "./EditorComponents";
+} from "@/components/idea/detail/EditorComponents";
 import { useParentHeaderDetector } from "@/hooks/detail-idea/useParentHeaderDetector";
 import { Skeleton } from "@/components/ui/skeleton";
 

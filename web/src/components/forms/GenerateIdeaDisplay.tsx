@@ -1,7 +1,6 @@
-// src/components/forms/GenerateIdeaDisplay.tsx (COMPLETED)
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -10,62 +9,103 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, CornerUpLeft, Sparkles, Lightbulb } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  Plus,
+  CornerUpLeft,
+  Sparkles,
+  Lightbulb,
+  FileText,
+  Users,
+  BarChart3,
+  Wrench,
+  ChevronRight,
+} from "lucide-react";
 import { addIdea } from "@/lib/idea-actions";
 import { toast } from "sonner";
-import {
-  getMainGoal,
-  getUserFlow,
-  getMvpFeatures,
-  parseTechStack,
-} from "@/lib/markdown-parser";
 import { Skeleton } from "@/components/ui/skeleton";
+import { IconMapper } from "@/components/styles/IconMapper";
 
-interface GeneratedIdea {
-  name: string;
-  description: string;
+// Import khusus untuk Blocknote read-only
+import { BlockNoteView } from "@blocknote/mantine";
+import { useBlocknoteEditor } from "@/hooks/detail-idea/useBlocknoteEditor";
+import { useBlocknoteTheme } from "@/hooks/detail-idea/useBlockNoteTheme";
+import "@blocknote/mantine/style.css";
+import "@blocknote/react/style.css";
+import "@blocknote/xl-ai/style.css";
+
+// Tipe untuk menyimpan setiap giliran percakapan
+interface ConversationTurn {
+  question: string;
+  answer: string;
 }
-type InterviewStep = "initial" | "questions" | "generating" | "result";
+
+// Tipe untuk hasil akhir blueprint dari AI
+interface GeneratedBlueprint {
+  projectData: {
+    title: string;
+    problem_statement: string;
+    target_audience: { icon: string; text: string }[];
+    success_metrics: { type: string; text: string }[];
+    tech_stack: string[];
+  };
+  workbenchContent: string;
+}
+
+type InterviewStep = "initial" | "interviewing" | "generating" | "result";
 
 export default function GenerateIdeaDisplay() {
   const router = useRouter();
   const [step, setStep] = useState<InterviewStep>("initial");
   const [interest, setInterest] = useState("");
-  const [questions, setQuestions] = useState<string[]>([]);
-  const [answers, setAnswers] = useState<string[]>([]);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [generatedIdea, setGeneratedIdea] = useState<GeneratedIdea | null>(
-    null
-  );
+  const [conversationHistory, setConversationHistory] = useState<
+    ConversationTurn[]
+  >([]);
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  const [currentAnswer, setCurrentAnswer] = useState("");
+  const [generatedBlueprint, setGeneratedBlueprint] =
+    useState<GeneratedBlueprint | null>(null);
   const [isSaving, startSavingTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleInitialSubmit = async (e: React.FormEvent) => {
+  // Inisialisasi editor Blocknote untuk mode read-only di halaman hasil
+  const editor = useBlocknoteEditor();
+  const theme = useBlocknoteTheme();
+
+  // Efek untuk memuat konten Markdown ke editor saat blueprint sudah siap
+  useEffect(() => {
+    if (step === "result" && generatedBlueprint && editor) {
+      const loadContent = async () => {
+        const blocks = await editor.tryParseMarkdownToBlocks(
+          generatedBlueprint.workbenchContent
+        );
+        editor.replaceBlocks(editor.topLevelBlocks, blocks);
+      };
+      loadContent();
+    }
+  }, [step, generatedBlueprint, editor]);
+
+  // Fungsi untuk memulai wawancara
+  const handleStartInterview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!interest.trim()) return;
     setIsLoading(true);
-    setStep("generating");
-    setError(null);
+    setStep("interviewing");
 
     try {
-      const response = await fetch("/api/ai/generate-questions", {
+      const response = await fetch("/api/ai/start-interview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ interest }),
       });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Failed to get questions.");
-      }
+
+      if (!response.ok) throw new Error("Failed to start the interview.");
+
       const data = await response.json();
-      setQuestions(data.questions);
-      setAnswers(new Array(data.questions.length).fill(""));
-      setCurrentQuestionIndex(0);
-      setStep("questions");
+      setCurrentQuestion(data.question);
     } catch (err: any) {
       toast.error("Error", { description: err.message });
       setStep("initial");
@@ -74,81 +114,87 @@ export default function GenerateIdeaDisplay() {
     }
   };
 
-  const handleAnswerChange = (index: number, value: string) => {
-    const newAnswers = [...answers];
-    newAnswers[index] = value;
-    setAnswers(newAnswers);
-  };
-
-  const handleQuestionSubmit = async (e: React.FormEvent) => {
+  // Fungsi untuk melanjutkan wawancara
+  const handleContinueInterview = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!answers[currentQuestionIndex].trim()) {
+    if (!currentAnswer.trim()) {
       toast.error("Please provide an answer.");
       return;
     }
 
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      setIsLoading(true);
-      setStep("generating");
-      setError(null);
-      try {
-        const conversation = questions.reduce((acc: any, q, i) => {
-          acc[q] = answers[i];
-          return acc;
-        }, {});
+    setIsLoading(true);
+    const newHistory: ConversationTurn[] = [
+      ...conversationHistory,
+      { question: currentQuestion, answer: currentAnswer },
+    ];
+    setConversationHistory(newHistory);
+    setCurrentAnswer("");
 
-        const response = await fetch("/api/ai/generate-idea", {
+    if (newHistory.length >= 3) {
+      setStep("generating");
+      try {
+        const res = await fetch("/api/ai/generate-idea", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ interest, conversation }),
+          body: JSON.stringify({ interest, conversation: newHistory }),
         });
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || "Failed to generate idea.");
-        }
-        const idea = await response.json();
-        setGeneratedIdea(idea);
+        if (!res.ok) throw new Error("Failed to generate the blueprint.");
+
+        const blueprint = await res.json();
+        setGeneratedBlueprint(blueprint);
         setStep("result");
       } catch (err: any) {
+        toast.error("Error generating blueprint", { description: err.message });
+        setStep("interviewing");
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      try {
+        const res = await fetch("/api/ai/continue-interview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ interest, history: newHistory }),
+        });
+        if (!res.ok) throw new Error("Failed to get the next question.");
+
+        const data = await res.json();
+        setCurrentQuestion(data.question);
+      } catch (err: any) {
         toast.error("Error", { description: err.message });
-        setStep("questions");
       } finally {
         setIsLoading(false);
       }
     }
   };
 
-  // BAGIAN YANG DILENGKAPI #1: handleSaveIdea
+  // Fungsi untuk menyimpan hasil
   const handleSaveIdea = () => {
-    if (!generatedIdea) return;
-    const formData = new FormData();
-    formData.append("title", generatedIdea.name);
-    formData.append("description", generatedIdea.description);
+    if (!generatedBlueprint) return;
 
     startSavingTransition(async () => {
-      const result = await addIdea(formData);
-      if (result.success) {
-        toast.success("Idea saved successfully!");
-        router.push("/dashboard");
+      const result = await addIdea(generatedBlueprint);
+      if (result.success && result.projectId) {
+        toast.success("Blueprint saved successfully!");
+        router.push(`/idea/${result.projectId}`);
       } else {
-        toast.error("Failed to save idea", { description: result.error });
+        toast.error("Failed to save blueprint", { description: result.error });
       }
     });
   };
 
-  // RENDER LOGIC
-  // BAGIAN YANG DILENGKAPI #2: Loading State
+  // --- RENDER LOGIC (UI) ---
+
   if (step === "generating") {
     return (
       <div className="text-center max-w-2xl mx-auto mt-32">
         <div className="mx-auto bg-primary/10 rounded-full p-3 w-fit mb-4 animate-pulse">
           <Lightbulb className="w-8 h-8 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold">AI is thinking...</h2>
+        <h2 className="text-2xl font-bold">AI is architecting...</h2>
         <p className="text-muted-foreground mt-2">
-          Crafting the perfect idea based on your answers. Please wait a moment.
+          Crafting a complete blueprint based on your answers. This might take a
+          moment.
         </p>
         <div className="space-y-4 mt-8">
           <Skeleton className="h-8 w-full" />
@@ -158,120 +204,196 @@ export default function GenerateIdeaDisplay() {
     );
   }
 
-  // BAGIAN YANG DILENGKAPI #3: Result UI
-  if (step === "result" && generatedIdea) {
-    const mainGoal = getMainGoal(generatedIdea.description);
-    const userFlow = getUserFlow(generatedIdea.description);
-    const mvpFeatures = getMvpFeatures(generatedIdea.description);
-    const techStack = parseTechStack(generatedIdea.description);
-    console.log("Generated Idea:", generatedIdea.description);
+  if (step === "result" && generatedBlueprint) {
+    const { projectData } = generatedBlueprint;
+    const kuantitatifMetrics = projectData.success_metrics.filter(
+      (m) => m.type === "Kuantitatif"
+    );
+    const kualitatifMetrics = projectData.success_metrics.filter(
+      (m) => m.type === "Kualitatif"
+    );
 
     return (
-      // Ganti bagian "result" di dalam GenerateIdeaDisplay.tsx dengan ini
-
-      <div className="space-y-8 animate-in fade-in-50 mt-20 max-w-3xl mx-auto">
-        {/* Header Utama */}
-        <div className="text-center mb-16">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {generatedIdea.name}
+      <div className="space-y-8 animate-in fade-in-50 mt-20 max-w-4xl mx-auto">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground">
+            {projectData.title}
           </h1>
-          <p className="mt-4 text-md text-muted-foreground max-w-2xl mx-auto">
-            AI has generated a project blueprint for you. Review the details
-            below and save it to your collection.
+          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+            Your project blueprint is ready. Review the details below and save
+            it to your collection.
           </p>
         </div>
 
-        <div className="space-y-12">
-          <section>
-            <h2 className="text-xl font-bold mb-4">Main Application Goal</h2>
-            <div className="prose prose-lg dark:prose-invert max-w-none">
-              <ReactMarkdown>{mainGoal}</ReactMarkdown>
-            </div>
-          </section>
+        {/* Bagian Data Terstruktur */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="col-span-1 md:col-span-2 border-none shadow-none bg-card/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-primary" />
+                Problem Statement
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                {projectData.problem_statement}
+              </p>
+            </CardContent>
+          </Card>
 
-          <section>
-            <h2 className="text-xl font-bold mb-4">How It Works (User Flow)</h2>
-            <div className="prose prose-lg dark:prose-invert max-w-none">
-              <ReactMarkdown>{userFlow}</ReactMarkdown>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold mb-4">MVP Features</h2>
-            <div className="prose prose-lg dark:prose-invert max-w-none">
-              <ReactMarkdown>{mvpFeatures}</ReactMarkdown>
-            </div>
-          </section>
-
-          <section>
-            <h2 className="text-xl font-bold mb-4">Recommended Tech Stack</h2>
-            <div className="space-y-6">
-              {techStack.map((tech) => (
-                <div key={tech.name}>
-                  <h3 className="text-lg font-semibold">
-                    {tech.name}:{" "}
-                    <span className="font-normal text-muted-foreground">
-                      {tech.tech}
-                    </span>
-                  </h3>
-                  <p className="text-muted-foreground mt-1">{tech.reason}</p>
+          <Card className="border-none shadow-none bg-card/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Target Audience
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {projectData.target_audience.map((audience, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <IconMapper
+                    iconName={audience.icon}
+                    className="w-5 h-5 text-muted-foreground mt-1"
+                  />
+                  <span className="text-muted-foreground">{audience.text}</span>
                 </div>
               ))}
-            </div>
-          </section>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-none bg-card/50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                Success Metrics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {kuantitatifMetrics.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-2 text-foreground">
+                    Kuantitatif
+                  </h4>
+                  <ul className="space-y-2">
+                    {kuantitatifMetrics.map((metric, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-2 text-muted-foreground"
+                      >
+                        <ChevronRight className="w-4 h-4 mt-1 shrink-0" />{" "}
+                        <span>{metric.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {kualitatifMetrics.length > 0 && (
+                <div>
+                  <h4 className="font-semibold text-sm mb-2 text-foreground">
+                    Kualitatif
+                  </h4>
+                  <ul className="space-y-2">
+                    {kualitatifMetrics.map((metric, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-2 text-muted-foreground"
+                      >
+                        <ChevronRight className="w-4 h-4 mt-1 shrink-0" />{" "}
+                        <span>{metric.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="border-none shadow-none bg-card/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-primary" />
+              Tech Stack
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {projectData.tech_stack.map((tech, index) => (
+              <Badge
+                key={index}
+                variant="secondary"
+                className="text-base px-3 py-1"
+              >
+                {tech}
+              </Badge>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* PERBAIKAN: Menggunakan Blocknote untuk merender Workbench Content */}
+        <div className="rounded-lg bg-card/50 p-2">
+          {editor && (
+            <BlockNoteView editor={editor} editable={false} theme={theme} />
+          )}
         </div>
 
         {/* Tombol Aksi */}
-        <div className="mt-20 flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="py-10 flex flex-col sm:flex-row gap-4 justify-center">
           <Button
             onClick={handleSaveIdea}
             disabled={isSaving}
             size="lg"
             className="w-full sm:w-auto py-6 text-base rounded-full"
           >
-            <Plus className="w-5 h-5 mr-2" />
-            Save to Collection
+            <Plus className="w-5 h-5 mr-2" /> Save to Collection
           </Button>
           <Button
             variant="outline"
-            onClick={() => setStep("initial")}
+            onClick={() => {
+              setStep("initial");
+              setConversationHistory([]);
+            }}
             disabled={isSaving}
             size="lg"
             className="w-full sm:w-auto py-6 text-base rounded-full"
           >
-            <CornerUpLeft className="w-5 h-5 mr-2" />
-            Generate Another
+            <CornerUpLeft className="w-5 h-5 mr-2" /> Generate Another
           </Button>
         </div>
       </div>
     );
   }
 
-  if (step === "questions") {
+  if (step === "interviewing") {
     return (
       <Card className="max-w-2xl mx-auto mt-32 border-0 shadow-none animate-in fade-in-50">
         <CardHeader>
           <CardTitle>
-            Just a few more questions... ({currentQuestionIndex + 1}/
-            {questions.length})
+            AI Interview ({conversationHistory.length + 1}/3)
           </CardTitle>
-          <CardDescription>{questions[currentQuestionIndex]}</CardDescription>
+          <CardDescription className="pt-2 text-base">
+            {isLoading ? "Thinking of the next question..." : currentQuestion}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleQuestionSubmit} className="space-y-4">
-            <Input
-              value={answers[currentQuestionIndex]}
-              onChange={(e) =>
-                handleAnswerChange(currentQuestionIndex, e.target.value)
-              }
+          <form onSubmit={handleContinueInterview} className="space-y-4">
+            <Textarea
+              value={currentAnswer}
+              onChange={(e) => setCurrentAnswer(e.target.value)}
               autoFocus
               placeholder="Your answer..."
-              className="h-12 text-base"
+              className="min-h-[120px] text-base resize-none"
+              disabled={isLoading}
             />
-            <Button type="submit" className="rounded-full py-6 w-full">
-              {currentQuestionIndex < questions.length - 1
-                ? "Next Question"
-                : "Generate Idea"}
+            <Button
+              type="submit"
+              className="rounded-full py-6 w-full"
+              disabled={isLoading}
+            >
+              {isLoading
+                ? "Processing..."
+                : conversationHistory.length >= 2
+                ? "Generate Blueprint"
+                : "Next Question"}
             </Button>
           </form>
         </CardContent>
@@ -279,6 +401,7 @@ export default function GenerateIdeaDisplay() {
     );
   }
 
+  // Initial Step
   return (
     <Card className="max-w-2xl mt-32 mx-auto border-0 shadow-none">
       <CardHeader className="text-center">
@@ -286,17 +409,18 @@ export default function GenerateIdeaDisplay() {
           Let AI be Your Creative Partner
         </CardTitle>
         <CardDescription className="text-md text-muted-foreground pt-2">
-          Start by entering a field of interest. The AI will then ask you some
-          follow-up questions to generate a tailored project idea.
+          Start by entering a field of interest. The AI will then conduct a
+          brief, dynamic interview to generate a tailored project blueprint for
+          you.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleInitialSubmit} className="w-full space-y-6 pt-4">
+        <form onSubmit={handleStartInterview} className="w-full space-y-6 pt-4">
           <Input
             value={interest}
             onChange={(e) => setInterest(e.target.value)}
             placeholder="e.g., 'Educational app for children'"
-            className="h-14 px-4 text-lg focus-visible:ring-2"
+            className="h-14 px-4 text-lg"
             disabled={isLoading}
             autoFocus
           />
@@ -304,6 +428,7 @@ export default function GenerateIdeaDisplay() {
             type="submit"
             size="lg"
             className="w-full font-medium rounded-full py-6"
+            disabled={isLoading}
           >
             <Sparkles className="w-5 h-5 mr-2" />
             Start Interview
