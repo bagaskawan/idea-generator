@@ -167,3 +167,55 @@ export async function toggleStar(id: string, currentState: boolean) {
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+/**
+ * Memperbarui satu atau lebih field dari sebuah proyek.
+ * Didesain untuk inline editing dari sidebar.
+ * @param projectId - ID dari proyek yang akan diupdate.
+ * @param fieldsToUpdate - Objek berisi field dan value baru.
+ */
+export async function updateProjectFields(
+  projectId: string,
+  fieldsToUpdate: { [key: string]: any }
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: "Authentication required." };
+  }
+
+  // Validasi field yang boleh diubah untuk keamanan
+  const allowedFields = [
+    "problem_statement",
+    "target_audience",
+    "success_metrics",
+    "tech_stack",
+  ];
+
+  const sanitizedFields: { [key: string]: any } = {};
+  for (const field of allowedFields) {
+    if (Object.prototype.hasOwnProperty.call(fieldsToUpdate, field)) {
+      sanitizedFields[field] = fieldsToUpdate[field];
+    }
+  }
+
+  if (Object.keys(sanitizedFields).length === 0) {
+    return { success: false, error: "No valid fields to update." };
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update(sanitizedFields)
+    .match({ id: projectId, user_id: user.id });
+
+  if (error) {
+    console.error("Supabase update error:", error);
+    return { success: false, error: error.message };
+  }
+
+  // ⛔️ HAPUS BARIS INI: revalidatePath(`/idea/${projectId}`);
+  return { success: true };
+}

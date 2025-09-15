@@ -1,4 +1,3 @@
-// src/components/dashboard/MainContent.tsx
 "use client";
 
 import { ProjectCard } from "@/components/dashboard/ProjectCard";
@@ -8,13 +7,34 @@ import {
   AnimatedGrid,
   AnimatedGridItem,
 } from "@/components/dashboard/AnimatedGrid";
-import { DataItem } from "@/utils/types";
-import { formatDistanceToNow } from "date-fns";
+import { ProjectData } from "@/utils/types";
+// Import 'isValid' untuk pemeriksaan tanggal yang andal
+import { formatDistanceToNow, isValid } from "date-fns";
 
-export default function MainContent({ projects }: { projects: DataItem[] }) {
+export default function MainContent({ projects }: { projects: ProjectData[] }) {
   if (!projects || projects.length === 0) {
     return <EmptyState />;
   }
+
+  // Fungsi helper untuk memformat tanggal dengan aman
+  const getSafeLastActivity = (
+    createdAt: Date | string | undefined | null
+  ): string => {
+    // Jika createdAt tidak ada, kembalikan string default
+    if (!createdAt) {
+      return "No creation date";
+    }
+
+    const date = new Date(createdAt);
+
+    // Periksa apakah tanggal yang dihasilkan valid
+    if (!isValid(date)) {
+      console.warn("Invalid date value received for project:", createdAt);
+      return "Invalid date";
+    }
+
+    return `Created ${formatDistanceToNow(date, { addSuffix: true })}`;
+  };
 
   return (
     <AnimatedGrid>
@@ -25,16 +45,12 @@ export default function MainContent({ projects }: { projects: DataItem[] }) {
         <AnimatedGridItem key={project.id}>
           <ProjectCard
             id={project.id}
-            title={project.name}
-            description={project.description}
+            title={project.title}
+            description={project.problem_statement}
             type="default"
             tags={project.tags || ["New"]}
-            lastActivity={`Created ${formatDistanceToNow(
-              new Date(project.createdAt),
-              {
-                addSuffix: true,
-              }
-            )}`}
+            // Gunakan fungsi helper yang sudah aman
+            lastActivity={getSafeLastActivity(project.created_at)}
             avatars={[]}
             isStarred={false}
           />

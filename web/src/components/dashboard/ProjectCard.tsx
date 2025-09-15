@@ -39,23 +39,9 @@ export const ProjectCard = ({
         </div>
 
         {description && (
-          <p className="mt-2 text-muted-foreground text-sm line-clamp-2">
+          <p className="mt-2 text-muted-foreground text-sm line-clamp-4">
             {description}
           </p>
-        )}
-
-        {tags && tags.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <Badge
-                key={tag}
-                variant="outline"
-                className={cn("border-transparent", getTagColor(tag))}
-              >
-                {tag}
-              </Badge>
-            ))}
-          </div>
         )}
         <div className="mt-auto w-full pt-6 flex justify-end items-center">
           <p className="text-xs text-muted-foreground">{lastActivity}</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { useBlocknoteEditor } from "@/hooks/detail-idea/useBlocknoteEditor";
 // Components
 import IdeaDetailHeader from "@/components/idea/detail/IdeaDetailHeader";
 import IdeaEditor from "@/components/idea/detail/IdeaEditor";
-import ProjectInfoSidebar from "./ProjectInfoSidebar"; // Import komponen sidebar baru
+import ProjectInfoSidebar from "@/components/idea/detail/ProjectInfoSidebar";
 
 // BlockNote Styles
 import "@blocknote/mantine/style.css";
@@ -27,10 +28,9 @@ type IdeaDetailViewProps = {
 
 export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const router = useRouter();
-  const { idea, loading, error } = useIdea(id);
+  const { idea, loading, error, refreshIdea } = useIdea(id);
   const editor = useBlocknoteEditor();
   const isRealtimeUpdate = useRef(false);
-  // useAutoSave tetap berfungsi, namun perlu disesuaikan di hook-nya untuk update tabel workbench_content
   const { isSaving } = useAutoSave(editor, id, isRealtimeUpdate);
 
   useRealtimeUpdates(id, editor, isRealtimeUpdate);
@@ -104,14 +104,18 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
       <IdeaDetailHeader onBack={() => router.back()} isSaving={isSaving} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12 mt-8">
-        {/* Kolom Kiri: Workbench (Editor) */}
-        <div className="lg:col-span-2 max-h-[calc(100vh-200px)] overflow-y-auto pr-4">
-          {editor && <IdeaEditor editor={editor} />}
+        {/* Kolom Kiri: Workbench (Editor) dengan ScrollArea */}
+        <div className="lg:col-span-2">
+          <ScrollArea className="h-[calc(100vh-200px)] pr-4">
+            {editor && <IdeaEditor editor={editor} />}
+          </ScrollArea>
         </div>
 
         {/* Kolom Kanan: Project Info Sidebar */}
-        <div className="lg:col-span-1 mt-8 lg:mt-0 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
-          <ProjectInfoSidebar project={idea} />
+        <div className="lg:col-span-1 mt-8 lg:mt-0">
+          <ScrollArea className="h-[calc(100vh-200px)] pr-2">
+            <ProjectInfoSidebar project={idea} onUpdate={refreshIdea} />
+          </ScrollArea>
         </div>
       </div>
     </div>

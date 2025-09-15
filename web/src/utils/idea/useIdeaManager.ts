@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { DataItem } from "@/utils/types";
+import { ProjectData } from "@/utils/types";
 import { createClient } from "@/utils/supabase/client";
 import useUser from "@/hooks/useUser";
 
 export function useIdeaManager() {
   const { user } = useUser();
-  const [data, setData] = useState<DataItem[]>([]);
+  const [data, setData] = useState<ProjectData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [elaboration, setElaboration] = useState<string | null>(null);
@@ -29,14 +29,19 @@ export function useIdeaManager() {
 
       if (error) throw error;
 
-      const formattedData = ideas.map((item) => ({
+      const formattedData: ProjectData[] = ideas.map((item) => ({
         id: item.id,
-        name: item.title,
-        description: item.description,
-        createdAt: new Date(item.created_at),
+        title: item.title,
+        problem_statement: item.problem_statement,
+        created_at: new Date(item.created_at),
         tags: item.tags || [],
-        isStarred: item.is_starred || false,
-        lastActivity: item.last_activity,
+        is_starred: item.is_starred || false,
+        last_activity: item.last_activity,
+        target_audience: item.target_audience || [],
+        success_metrics: item.success_metrics || [],
+        tech_stack: item.tech_stack || [],
+        status: item.status || "Idea",
+        priority: item.priority || "Medium",
       }));
 
       setData(formattedData);
@@ -100,7 +105,7 @@ export function useIdeaManager() {
     }
   };
 
-  const developIdea = async (item: DataItem) => {
+  const developIdea = async (item: ProjectData) => {
     setIsApiLoading(true);
     setElaboration(null);
     try {
@@ -108,8 +113,8 @@ export function useIdeaManager() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: item.name,
-          description: item.description,
+          name: item.title,
+          description: item.problem_statement,
         }),
       });
       if (!response.ok) {

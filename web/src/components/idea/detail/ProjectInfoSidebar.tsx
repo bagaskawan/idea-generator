@@ -5,18 +5,47 @@ import { Badge } from "@/components/ui/badge";
 import { IconMapper } from "@/components/styles/IconMapper";
 import { ProjectData } from "@/utils/types";
 import { FileText, Users, BarChart3, Wrench, ChevronRight } from "lucide-react";
+import EditableSidebarField from "@/components/idea/detail/EditableSidebarField";
+import { updateProjectFields } from "@/lib/idea-actions";
+import { toast } from "sonner";
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 interface ProjectInfoSidebarProps {
   project: ProjectData;
+  onUpdate: () => void;
 }
 
 export default function ProjectInfoSidebar({
   project,
+  onUpdate,
 }: ProjectInfoSidebarProps) {
-  const kuantitatifMetrics =
-    project.success_metrics?.filter((m) => m.type === "Kuantitatif") || [];
-  const kualitatifMetrics =
-    project.success_metrics?.filter((m) => m.type === "Kualitatif") || [];
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  // const handleSaveField = async (fieldName: string, newValue: any) => {
+  //   startTransition(async () => {
+  //     const result = await updateProjectField(project.id, fieldName, newValue);
+  //     if (result.success) {
+  //       toast.success(`"${fieldName.replace("_", " ")}" has been updated.`);
+  //       onUpdate();
+  //     } else {
+  //       toast.error(`Failed to update ${fieldName.replace("_", " ")}.`, {
+  //         description: result.error,
+  //       });
+  //     }
+  //   });
+  // };
+
+  const handleSave = (fieldName: string) => async (newValue: any) => {
+    const result = await updateProjectFields(project.id, {
+      [fieldName]: newValue,
+    });
+    if (result.success) {
+      onUpdate();
+    }
+    return result;
+  };
 
   return (
     <aside className="space-y-6">
@@ -28,9 +57,13 @@ export default function ProjectInfoSidebar({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            {project.problem_statement || "Belum didefinisikan."}
-          </p>
+          <EditableSidebarField
+            fieldName="Problem Statement"
+            initialValue={project.problem_statement || ""}
+            onSave={handleSave("problem_statement")}
+            editAs="textarea"
+            displayAs="text"
+          />
         </CardContent>
       </Card>
 
@@ -41,22 +74,14 @@ export default function ProjectInfoSidebar({
             Target Audience
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          {project.target_audience && project.target_audience.length > 0 ? (
-            project.target_audience.map((audience, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <IconMapper
-                  iconName={audience.icon}
-                  className="w-4 h-4 text-muted-foreground mt-1 shrink-0"
-                />
-                <span className="text-muted-foreground">{audience.text}</span>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Belum didefinisikan.
-            </p>
-          )}
+        <CardContent>
+          <EditableSidebarField
+            fieldName="Target Audience"
+            initialValue={project.target_audience || []}
+            onSave={handleSave("target_audience")}
+            editAs="list"
+            displayAs="list"
+          />
         </CardContent>
       </Card>
 
@@ -67,49 +92,14 @@ export default function ProjectInfoSidebar({
             Success Metrics
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          {kuantitatifMetrics.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-2">
-                Kuantitatif
-              </h4>
-              <ul className="space-y-2">
-                {kuantitatifMetrics.map((metric, index) => (
-                  <li
-                    key={index}
-                    className="flex items-start gap-2 text-muted-foreground"
-                  >
-                    <ChevronRight className="w-4 h-4 mt-0.5 shrink-0" />{" "}
-                    <span>{metric.text}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {kualitatifMetrics.length > 0 && (
-            <div>
-              <h4 className="font-semibold text-xs uppercase text-muted-foreground mb-2">
-                Kualitatif
-              </h4>
-              <ul className="space-y-2">
-                {kualitatifMetrics.map((metric, index) => (
-                  <li
-                    key={index}
-                    className="flex items-start gap-2 text-muted-foreground"
-                  >
-                    <ChevronRight className="w-4 h-4 mt-0.5 shrink-0" />{" "}
-                    <span>{metric.text}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {kualitatifMetrics.length === 0 &&
-            kuantitatifMetrics.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                Belum didefinisikan.
-              </p>
-            )}
+        <CardContent>
+          <EditableSidebarField
+            fieldName="Success Metrics"
+            initialValue={project.success_metrics || []}
+            onSave={handleSave("success_metrics")}
+            editAs="list"
+            displayAs="list"
+          />
         </CardContent>
       </Card>
 
@@ -120,18 +110,14 @@ export default function ProjectInfoSidebar({
             Tech Stack
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap gap-2">
-          {project.tech_stack && project.tech_stack.length > 0 ? (
-            project.tech_stack.map((tech, index) => (
-              <Badge key={index} variant="secondary" className="px-3 py-1">
-                {tech}
-              </Badge>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Belum didefinisikan.
-            </p>
-          )}
+        <CardContent>
+          <EditableSidebarField
+            fieldName="Tech Stack"
+            initialValue={project.tech_stack || []}
+            onSave={handleSave("tech_stack")}
+            editAs="list"
+            displayAs="badge"
+          />
         </CardContent>
       </Card>
     </aside>

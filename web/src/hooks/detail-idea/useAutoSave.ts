@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
-import { type BlockNoteEditor, type Block } from "@blocknote/core";
+import { type BlockNoteEditor, type Block } from "@blocknote-core";
 import { getBlockText } from "@/lib/blocknoteHeaderUtils"; // <-- Import helper yang sudah ada
 
 export const useAutoSave = (
