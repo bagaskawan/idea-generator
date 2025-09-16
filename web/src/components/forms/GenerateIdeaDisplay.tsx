@@ -37,6 +37,9 @@ import "@blocknote/mantine/style.css";
 import "@blocknote/react/style.css";
 import "@blocknote/xl-ai/style.css";
 
+//IdeaCard
+import { IdeaOption, IdeaOptionCard } from "@/components/idea/IdeaOptionCard";
+
 // Tipe untuk menyimpan setiap giliran percakapan
 interface ConversationTurn {
   question: string;
@@ -55,7 +58,12 @@ interface GeneratedBlueprint {
   workbenchContent: string;
 }
 
-type InterviewStep = "initial" | "interviewing" | "generating" | "result";
+type InterviewStep =
+  | "initial"
+  | "interviewing"
+  | "showOptions"
+  | "generating"
+  | "result";
 
 export default function GenerateIdeaDisplay() {
   const router = useRouter();
@@ -68,6 +76,8 @@ export default function GenerateIdeaDisplay() {
   const [currentAnswer, setCurrentAnswer] = useState("");
   const [generatedBlueprint, setGeneratedBlueprint] =
     useState<GeneratedBlueprint | null>(null);
+
+  const [ideaOptions, setIdeaOptions] = useState<IdeaOption[]>([]);
   const [isSaving, startSavingTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -130,26 +140,28 @@ export default function GenerateIdeaDisplay() {
     setConversationHistory(newHistory);
     setCurrentAnswer("");
 
+    // Jika wawancara sudah selesai (misalnya 3 pertanyaan)
     if (newHistory.length >= 3) {
-      setStep("generating");
+      // PINDAH KE TAHAP MENAMPILKAN OPSI
+      setStep("showOptions");
       try {
-        const res = await fetch("/api/ai/generate-idea", {
+        const res = await fetch("/api/ai/generate-idea-options", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ interest, conversation: newHistory }),
         });
-        if (!res.ok) throw new Error("Failed to generate the blueprint.");
+        if (!res.ok) throw new Error("Failed to get idea options.");
 
-        const blueprint = await res.json();
-        setGeneratedBlueprint(blueprint);
-        setStep("result");
+        const data = await res.json();
+        setIdeaOptions(data.ideas); // Simpan opsi ide
       } catch (err: any) {
-        toast.error("Error generating blueprint", { description: err.message });
-        setStep("interviewing");
+        toast.error("Error getting ideas", { description: err.message });
+        setStep("interviewing"); // Kembali jika gagal
       } finally {
         setIsLoading(false);
       }
     } else {
+      // Lanjutkan ke pertanyaan berikutnya (logika ini tetap sama)
       try {
         const res = await fetch("/api/ai/continue-interview", {
           method: "POST",
@@ -165,6 +177,35 @@ export default function GenerateIdeaDisplay() {
       } finally {
         setIsLoading(false);
       }
+    }
+  };
+
+  //Fungsi untuk menangani pemilihan ide
+  const handleSelectIdea = async (selectedIdea: IdeaOption) => {
+    setStep("generating");
+    setIsLoading(true);
+    try {
+      // Panggil API generate-idea yang sudah ada, tapi dengan data dari kartu yang dipilih
+      const res = await fetch("/api/ai/generate-idea", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          interest: selectedIdea.title,
+          conversation: [
+            { question: "Final Idea", answer: selectedIdea.description },
+          ],
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to generate the blueprint.");
+
+      const blueprint = await res.json();
+      setGeneratedBlueprint(blueprint);
+      setStep("result");
+    } catch (err: any) {
+      toast.error("Error generating blueprint", { description: err.message });
+      setStep("showOptions"); // Kembali ke pilihan jika gagal
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -184,6 +225,43 @@ export default function GenerateIdeaDisplay() {
   };
 
   // --- RENDER LOGIC (UI) ---
+
+  if (step === "showOptions") {
+    if (isLoading) {
+      return (
+        <div className="text-center max-w-2xl mx-auto mt-32">
+          <div className="mx-auto bg-primary/10 rounded-full p-3 w-fit mb-4 animate-pulse">
+            <Lightbulb className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold">Finding creative ideas...</h2>
+          <p className="text-muted-foreground mt-2">
+            Analyzing your interview to generate personalized project ideas.
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className="container mx-auto p-8 animate-in fade-in-50">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold">Here Are Some Ideas For You</h1>
+          <p className="text-muted-foreground mt-2">
+            Based on your answers, here are a few directions you could take.
+            Choose one to generate a full blueprint.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {ideaOptions.map((idea, index) => (
+            <IdeaOptionCard
+              key={index}
+              idea={idea}
+              onSelect={() => handleSelectIdea(idea)}
+              isLoading={step === "generating"}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (step === "generating") {
     return (
