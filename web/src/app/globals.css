@@ -160,3 +160,11 @@
     @apply bg-background text-foreground;
   }
 }
+
+.leading-none {
+  line-height: 1.5;
+}
+
+.focus-visible\:ring-ring\/50:focus-visible {
+  --tw-ring-color: none;
+}

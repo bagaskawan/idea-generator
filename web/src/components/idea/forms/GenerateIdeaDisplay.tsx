@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition, useEffect, Suspense } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -65,113 +65,195 @@ type InterviewStep =
   | "generating"
   | "result";
 
-export default function GenerateIdeaDisplay() {
-  const router = useRouter();
-  const [step, setStep] = useState<InterviewStep>("initial");
-  const [interest, setInterest] = useState("");
-  const [conversationHistory, setConversationHistory] = useState<
-    ConversationTurn[]
-  >([]);
-  const [currentQuestion, setCurrentQuestion] = useState("");
-  const [currentAnswer, setCurrentAnswer] = useState("");
-  const [generatedBlueprint, setGeneratedBlueprint] =
-    useState<GeneratedBlueprint | null>(null);
+// Definisikan tipe untuk state yang akan disimpan di sessionStorage
+interface InterviewSessionState {
+  interest: string;
+  conversationHistory: ConversationTurn[];
+  currentQuestion: string;
+  ideaOptions: IdeaOption[];
+  generatedBlueprint: GeneratedBlueprint | null;
+}
 
-  const [ideaOptions, setIdeaOptions] = useState<IdeaOption[]>([]);
+const sessionStorageKey = "interviewSessionState";
+
+// Komponen utama yang akan kita bungkus dengan Suspense
+function GenerateIdeaDisplayContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // State lokal hanya untuk input dan transisi UI
+  const [currentAnswer, setCurrentAnswer] = useState("");
   const [isSaving, startSavingTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(false);
+
+  // State tunggal yang dipulihkan dari sessionStorage
+  const [sessionState, setSessionState] = useState<InterviewSessionState>({
+    interest: "",
+    conversationHistory: [],
+    currentQuestion: "",
+    ideaOptions: [],
+    generatedBlueprint: null,
+  });
+
+  // Membaca `step` dari URL
+  const currentStep = (searchParams.get("step") || "initial") as InterviewStep;
 
   // Inisialisasi editor Blocknote untuk mode read-only di halaman hasil
   const editor = useBlocknoteEditor();
   const theme = useBlocknoteTheme();
 
-  // Efek untuk memuat konten Markdown ke editor saat blueprint sudah siap
+  // --- LOGIKA PEMULIHAN & PEMBARUAN STATE ---
+
+  // Efek untuk memulihkan state dari sessionStorage saat komponen dimuat
   useEffect(() => {
-    if (step === "result" && generatedBlueprint && editor) {
+    try {
+      const savedStateJSON = sessionStorage.getItem(sessionStorageKey);
+      if (savedStateJSON) {
+        const savedState: InterviewSessionState = JSON.parse(savedStateJSON);
+        setSessionState(savedState);
+      }
+    } catch (error) {
+      console.error("Gagal mem-parsing state dari session:", error);
+      sessionStorage.removeItem(sessionStorageKey);
+    }
+  }, []);
+
+  // Efek untuk memuat konten ke editor Blocknote saat state siap
+  useEffect(() => {
+    if (currentStep === "result" && sessionState.generatedBlueprint && editor) {
       const loadContent = async () => {
         const blocks = await editor.tryParseMarkdownToBlocks(
-          generatedBlueprint.workbenchContent
+          sessionState.generatedBlueprint!.workbenchContent
         );
         editor.replaceBlocks(editor.topLevelBlocks, blocks);
       };
       loadContent();
     }
-  }, [step, generatedBlueprint, editor]);
+  }, [currentStep, sessionState.generatedBlueprint, editor]);
 
-  // Fungsi untuk memulai wawancara
-  const handleStartInterview = async (e: React.FormEvent) => {
+  // Fungsi helper untuk memperbarui URL dan sessionStorage
+  const updateState = (
+    step: InterviewStep,
+    newState: Partial<InterviewSessionState>
+  ) => {
+    const updatedState = { ...sessionState, ...newState };
+    setSessionState(updatedState);
+    sessionStorage.setItem(sessionStorageKey, JSON.stringify(updatedState));
+
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set("step", step);
+    // Gunakan router.push untuk navigasi sisi klien
+    router.push(`${pathname}?${newParams.toString()}`);
+  };
+
+  // Fungsi untuk membersihkan state dan kembali ke awal
+  const clearInterviewState = () => {
+    sessionStorage.removeItem(sessionStorageKey);
+    // Reset state lokal juga
+    setSessionState({
+      interest: "",
+      conversationHistory: [],
+      currentQuestion: "",
+      ideaOptions: [],
+      generatedBlueprint: null,
+    });
+    setCurrentAnswer("");
+    router.push(pathname); // Kembali ke URL dasar
+  };
+
+  // --- HANDLER FUNGSI ---
+
+  const handleStartInterview = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!interest.trim()) return;
+    // Ambil nilai langsung dari elemen form untuk memastikan data terbaru
+    const interestInput = e.currentTarget.elements.namedItem(
+      "interest"
+    ) as HTMLInputElement;
+    const interestValue = interestInput.value;
+
+    if (!interestValue.trim()) return;
     setIsLoading(true);
-    setStep("interviewing");
 
     try {
       const response = await fetch("/api/ai/start-interview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interest }),
+        body: JSON.stringify({ interest: interestValue }),
       });
 
-      if (!response.ok) throw new Error("Failed to start the interview.");
+      if (!response.ok) throw new Error("Gagal memulai interview.");
 
       const data = await response.json();
-      setCurrentQuestion(data.question);
+      updateState("interviewing", {
+        interest: interestValue,
+        currentQuestion: data.question,
+        // Reset state sebelumnya jika memulai dari awal
+        conversationHistory: [],
+        ideaOptions: [],
+        generatedBlueprint: null,
+      });
     } catch (err: any) {
       toast.error("Error", { description: err.message });
-      setStep("initial");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fungsi untuk melanjutkan wawancara
   const handleContinueInterview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentAnswer.trim()) {
-      toast.error("Please provide an answer.");
+      toast.error("Mohon berikan jawaban.");
       return;
     }
 
     setIsLoading(true);
     const newHistory: ConversationTurn[] = [
-      ...conversationHistory,
-      { question: currentQuestion, answer: currentAnswer },
+      ...sessionState.conversationHistory,
+      { question: sessionState.currentQuestion, answer: currentAnswer },
     ];
-    setConversationHistory(newHistory);
-    setCurrentAnswer("");
+    setCurrentAnswer(""); // Reset input setelah dikirim
 
-    // Jika wawancara sudah selesai (misalnya 3 pertanyaan)
     if (newHistory.length >= 3) {
-      // PINDAH KE TAHAP MENAMPILKAN OPSI
-      setStep("showOptions");
       try {
         const res = await fetch("/api/ai/generate-idea-options", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ interest, conversation: newHistory }),
+          body: JSON.stringify({
+            interest: sessionState.interest,
+            conversation: newHistory,
+          }),
         });
-        if (!res.ok) throw new Error("Failed to get idea options.");
+        if (!res.ok) throw new Error("Gagal mendapatkan opsi ide.");
 
         const data = await res.json();
-        setIdeaOptions(data.ideas); // Simpan opsi ide
+        updateState("showOptions", {
+          conversationHistory: newHistory,
+          ideaOptions: data.ideas,
+        });
       } catch (err: any) {
-        toast.error("Error getting ideas", { description: err.message });
-        setStep("interviewing"); // Kembali jika gagal
+        toast.error("Error mendapatkan ide", { description: err.message });
       } finally {
         setIsLoading(false);
       }
     } else {
-      // Lanjutkan ke pertanyaan berikutnya (logika ini tetap sama)
       try {
         const res = await fetch("/api/ai/continue-interview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ interest, history: newHistory }),
+          body: JSON.stringify({
+            interest: sessionState.interest,
+            history: newHistory,
+          }),
         });
-        if (!res.ok) throw new Error("Failed to get the next question.");
+        if (!res.ok)
+          throw new Error("Gagal mendapatkan pertanyaan berikutnya.");
 
         const data = await res.json();
-        setCurrentQuestion(data.question);
+        updateState("interviewing", {
+          conversationHistory: newHistory,
+          currentQuestion: data.question,
+        });
       } catch (err: any) {
         toast.error("Error", { description: err.message });
       } finally {
@@ -180,82 +262,84 @@ export default function GenerateIdeaDisplay() {
     }
   };
 
-  //Fungsi untuk menangani pemilihan ide
   const handleSelectIdea = async (selectedIdea: IdeaOption) => {
-    setStep("generating");
+    updateState("generating", {}); // Pindah ke step generating dulu
     setIsLoading(true);
     try {
-      // Panggil API generate-idea yang sudah ada, tapi dengan data dari kartu yang dipilih
       const res = await fetch("/api/ai/generate-idea", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          interest: selectedIdea.title,
+          interest: selectedIdea.projectName,
           conversation: [
-            { question: "Final Idea", answer: selectedIdea.description },
+            {
+              question: "Final Idea",
+              answer: selectedIdea.uniqueSellingProposition,
+            },
           ],
         }),
       });
-      if (!res.ok) throw new Error("Failed to generate the blueprint.");
+      if (!res.ok) throw new Error("Gagal membuat blueprint.");
 
       const blueprint = await res.json();
-      setGeneratedBlueprint(blueprint);
-      setStep("result");
+      updateState("result", { generatedBlueprint: blueprint });
     } catch (err: any) {
-      toast.error("Error generating blueprint", { description: err.message });
-      setStep("showOptions"); // Kembali ke pilihan jika gagal
+      toast.error("Error membuat blueprint", { description: err.message });
+      updateState("showOptions", {}); // Kembali jika gagal
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fungsi untuk menyimpan hasil
   const handleSaveIdea = () => {
-    if (!generatedBlueprint) return;
+    if (!sessionState.generatedBlueprint) return;
 
     startSavingTransition(async () => {
-      const result = await addIdea(generatedBlueprint);
+      const result = await addIdea(sessionState.generatedBlueprint!);
       if (result.success && result.projectId) {
-        toast.success("Blueprint saved successfully!");
+        toast.success("Blueprint berhasil disimpan!");
+        clearInterviewState(); // Bersihkan state setelah berhasil
         router.push(`/idea/${result.projectId}`);
       } else {
-        toast.error("Failed to save blueprint", { description: result.error });
+        toast.error("Gagal menyimpan blueprint", {
+          description: result.error,
+        });
       }
     });
   };
 
   // --- RENDER LOGIC (UI) ---
 
-  if (step === "showOptions") {
+  if (currentStep === "showOptions") {
     if (isLoading) {
       return (
         <div className="text-center max-w-2xl mx-auto mt-32">
           <div className="mx-auto bg-primary/10 rounded-full p-3 w-fit mb-4 animate-pulse">
             <Lightbulb className="w-8 h-8 text-primary" />
           </div>
-          <h2 className="text-2xl font-bold">Finding creative ideas...</h2>
+          <h2 className="text-2xl font-bold">Mencari ide kreatif...</h2>
           <p className="text-muted-foreground mt-2">
-            Analyzing your interview to generate personalized project ideas.
+            Menganalisis hasil wawancara untuk ide yang dipersonalisasi.
           </p>
         </div>
       );
     }
     return (
-      <div className="container mx-auto p-8 animate-in fade-in-50">
+      <div className="container mx-auto p-8 animate-in fade-in-50 mt-28">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold">Here Are Some Ideas For You</h1>
+          <h1 className="text-3xl font-bold">Berikut Beberapa Ide Untukmu</h1>
           <p className="text-muted-foreground mt-2">
-            Based on your answers, here are a few directions you could take.
-            Choose one to generate a full blueprint.
+            Berdasarkan jawabanmu, pilih salah satu untuk membuat blueprint
+            lengkap.
           </p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {ideaOptions.map((idea, index) => (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+          {sessionState.ideaOptions.map((idea, index) => (
             <IdeaOptionCard
               key={index}
               idea={idea}
               onSelect={() => handleSelectIdea(idea)}
-              isLoading={step === "generating"}
+              isLoading={isLoading}
             />
           ))}
         </div>
@@ -263,16 +347,15 @@ export default function GenerateIdeaDisplay() {
     );
   }
 
-  if (step === "generating") {
+  if (currentStep === "generating") {
     return (
       <div className="text-center max-w-2xl mx-auto mt-32">
         <div className="mx-auto bg-primary/10 rounded-full p-3 w-fit mb-4 animate-pulse">
           <Lightbulb className="w-8 h-8 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold">AI is architecting...</h2>
+        <h2 className="text-2xl font-bold">AI sedang merancang...</h2>
         <p className="text-muted-foreground mt-2">
-          Crafting a complete blueprint based on your answers. This might take a
-          moment.
+          Membuat blueprint lengkap berdasarkan jawabanmu. Mohon tunggu.
         </p>
         <div className="space-y-4 mt-8">
           <Skeleton className="h-8 w-full" />
@@ -282,8 +365,8 @@ export default function GenerateIdeaDisplay() {
     );
   }
 
-  if (step === "result" && generatedBlueprint) {
-    const { projectData } = generatedBlueprint;
+  if (currentStep === "result" && sessionState.generatedBlueprint) {
+    const { projectData } = sessionState.generatedBlueprint;
     const kuantitatifMetrics = projectData.success_metrics.filter(
       (m) => m.type === "Kuantitatif"
     );
@@ -298,8 +381,8 @@ export default function GenerateIdeaDisplay() {
             {projectData.title}
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Your project blueprint is ready. Review the details below and save
-            it to your collection.
+            Blueprint proyekmu sudah siap. Tinjau detail di bawah ini dan simpan
+            ke koleksimu.
           </p>
         </div>
 
@@ -407,7 +490,7 @@ export default function GenerateIdeaDisplay() {
           </CardContent>
         </Card>
 
-        {/* PERBAIKAN: Menggunakan Blocknote untuk merender Workbench Content */}
+        {/* Menggunakan Blocknote untuk merender Workbench Content */}
         <div className="rounded-lg bg-card/50 p-2">
           {editor && (
             <BlockNoteView editor={editor} editable={false} theme={theme} />
@@ -422,34 +505,33 @@ export default function GenerateIdeaDisplay() {
             size="lg"
             className="w-full sm:w-auto py-6 text-base rounded-full"
           >
-            <Plus className="w-5 h-5 mr-2" /> Save to Collection
+            <Plus className="w-5 h-5 mr-2" /> Simpan ke Koleksi
           </Button>
           <Button
             variant="outline"
-            onClick={() => {
-              setStep("initial");
-              setConversationHistory([]);
-            }}
+            onClick={clearInterviewState}
             disabled={isSaving}
             size="lg"
             className="w-full sm:w-auto py-6 text-base rounded-full"
           >
-            <CornerUpLeft className="w-5 h-5 mr-2" /> Generate Another
+            <CornerUpLeft className="w-5 h-5 mr-2" /> Buat Ide Lain
           </Button>
         </div>
       </div>
     );
   }
 
-  if (step === "interviewing") {
+  if (currentStep === "interviewing") {
     return (
       <Card className="max-w-2xl mx-auto mt-32 border-0 shadow-none animate-in fade-in-50">
         <CardHeader>
           <CardTitle>
-            AI Interview ({conversationHistory.length + 1}/3)
+            Wawancara AI ({sessionState.conversationHistory.length + 1}/3)
           </CardTitle>
           <CardDescription className="pt-2 text-base">
-            {isLoading ? "Thinking of the next question..." : currentQuestion}
+            {isLoading
+              ? "Memikirkan pertanyaan berikutnya..."
+              : sessionState.currentQuestion}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -458,7 +540,7 @@ export default function GenerateIdeaDisplay() {
               value={currentAnswer}
               onChange={(e) => setCurrentAnswer(e.target.value)}
               autoFocus
-              placeholder="Your answer..."
+              placeholder="Jawabanmu..."
               className="min-h-[120px] text-base resize-none"
               disabled={isLoading}
             />
@@ -468,10 +550,10 @@ export default function GenerateIdeaDisplay() {
               disabled={isLoading}
             >
               {isLoading
-                ? "Processing..."
-                : conversationHistory.length >= 2
-                ? "Generate Blueprint"
-                : "Next Question"}
+                ? "Memproses..."
+                : sessionState.conversationHistory.length >= 2
+                ? "Buat Blueprint"
+                : "Pertanyaan Berikutnya"}
             </Button>
           </form>
         </CardContent>
@@ -479,25 +561,24 @@ export default function GenerateIdeaDisplay() {
     );
   }
 
-  // Initial Step
+  // Initial Step (Default)
   return (
     <Card className="max-w-2xl mt-32 mx-auto border-0 shadow-none">
       <CardHeader className="text-center">
         <CardTitle className="text-3xl font-bold">
-          Let AI be Your Creative Partner
+          Jadikan AI Partner Kreatifmu
         </CardTitle>
         <CardDescription className="text-md text-muted-foreground pt-2">
-          Start by entering a field of interest. The AI will then conduct a
-          brief, dynamic interview to generate a tailored project blueprint for
-          you.
+          Mulai dengan memasukkan bidang minat. AI akan melakukan wawancara
+          singkat untuk membuat blueprint proyek yang disesuaikan untukmu.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleStartInterview} className="w-full space-y-6 pt-4">
           <Input
-            value={interest}
-            onChange={(e) => setInterest(e.target.value)}
-            placeholder="e.g., 'Educational app for children'"
+            name="interest" // Beri nama agar bisa diakses dari form
+            defaultValue={sessionState.interest} // Gunakan defaultValue untuk pulihkan state
+            placeholder="contoh: 'Aplikasi edukasi untuk anak'"
             className="h-14 px-4 text-lg"
             disabled={isLoading}
             autoFocus
@@ -509,10 +590,19 @@ export default function GenerateIdeaDisplay() {
             disabled={isLoading}
           >
             <Sparkles className="w-5 h-5 mr-2" />
-            Start Interview
+            Mulai Wawancara
           </Button>
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+// Komponen Wrapper untuk menyediakan Suspense
+export default function GenerateIdeaDisplay() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <GenerateIdeaDisplayContent />
+    </Suspense>
   );
 }

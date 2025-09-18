@@ -1,7 +1,7 @@
 // src/components/dashboard/AddNewIdeaCard.tsx
 "use client";
 
-import Link from "next/link"; // <-- Impor Link
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Plus } from "lucide-react";
 

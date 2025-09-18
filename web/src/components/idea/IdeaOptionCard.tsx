@@ -11,8 +11,8 @@ import { ArrowRight } from "lucide-react";
 
 export type IdeaOption = {
   projectName: string;
-  projectDescription: string;
-  mvpFeatures: {
+  uniqueSellingProposition: string;
+  keyFeatures: {
     featureName: string;
     description: string;
   }[];
@@ -30,24 +30,23 @@ export function IdeaOptionCard({
   isLoading,
 }: IdeaOptionCardProps) {
   return (
-    <Card className="flex flex-col h-full transform transition-transform duration-300 hover:scale-105 hover:shadow-xl">
-      <CardHeader>
-        <CardTitle>{idea.projectName}</CardTitle>
-        <CardDescription className="pt-2">
-          {idea.projectDescription}
-        </CardDescription>
-      </CardHeader>
-      <CardFooter className="flex justify-between items-end mt-auto pt-4">
-        <div className="flex flex-wrap gap-2">
-          {idea.mvpFeatures.map((mvpFeature, index) => (
-            <Badge key={index} variant="secondary">
-              {mvpFeature.featureName}
-            </Badge>
-          ))}
-        </div>
-        <Button onClick={onSelect} disabled={isLoading} size="sm">
+    <Card className="flex flex-col h-full p-0">
+      <div className="p-6 flex-grow">
+        <CardHeader className="p-0">
+          <CardTitle>{idea.projectName}</CardTitle>
+          <CardDescription className="pt-2">
+            {idea.uniqueSellingProposition}
+          </CardDescription>
+        </CardHeader>
+      </div>
+      <CardFooter className="p-0 mt-auto">
+        <Button
+          onClick={onSelect}
+          disabled={isLoading}
+          className="w-full rounded-t-none h-12 text-base group"
+        >
           Buat Blueprint
-          <ArrowRight className="w-4 h-4 ml-2" />
+          <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
         </Button>
       </CardFooter>
     </Card>

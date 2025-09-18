@@ -1,10 +1,23 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Trash2 } from "lucide-react";
 
 // Custom hooks
 import { useIdea } from "@/hooks/detail-idea/useIdeaDetail";
@@ -22,6 +35,8 @@ import "@blocknote/mantine/style.css";
 import "@blocknote/react/style.css";
 import "@blocknote/xl-ai/style.css";
 
+import { deleteIdea } from "@/lib/idea-actions";
+
 type IdeaDetailViewProps = {
   id: string;
 };
@@ -33,7 +48,21 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const isRealtimeUpdate = useRef(false);
   const { isSaving } = useAutoSave(editor, id, isRealtimeUpdate);
 
+  //deleting ideas
+  const [isDeleting, startDeleteTransition] = useTransition();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useRealtimeUpdates(id, editor, isRealtimeUpdate);
+
+  useEffect(() => {
+    // Reset input konfirmasi setiap kali dialog ditutup
+    if (!isDeleteDialogOpen) {
+      setDeleteConfirmationInput("");
+      setDeleteError(null);
+    }
+  }, [isDeleteDialogOpen]);
 
   // useEffect sekarang akan mengisi editor dari workbenchContent.markdown
   useEffect(() => {
@@ -61,6 +90,30 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
 
     syncEditorContent();
   }, [editor, idea]);
+
+  const handleDeleteConfirm = (event: React.MouseEvent) => {
+    event.preventDefault(); // Mencegah dialog tertutup secara otomatis
+    if (!idea) return;
+    console.log("Idea: ", deleteConfirmationInput);
+    console.log("Idea Title: ", idea.title);
+
+    if (deleteConfirmationInput !== idea.title) {
+      setDeleteError(`Please type ${idea.title} to confirm.`);
+      return; // Hentikan fungsi jika tidak cocok
+    }
+
+    startDeleteTransition(async () => {
+      const result = await deleteIdea(id);
+      if (result?.error) {
+        toast.error("Failed to delete idea", {
+          description: result.error,
+        });
+      } else {
+        toast.success("Idea successfully deleted");
+        router.push("/dashboard"); // Redirect setelah berhasil hapus
+      }
+    });
+  };
 
   if (loading) {
     return (
@@ -99,25 +152,87 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
     return <div className="text-center mt-20">Proyek tidak ditemukan.</div>;
   }
 
+  const isDeleteButtonDisabled = isDeleting;
+
   return (
-    <div className="max-w-screen-2xl h-full mx-auto px-4 sm:px-6 lg:px-6">
-      <IdeaDetailHeader onBack={() => router.back()} isSaving={isSaving} />
+    <>
+      <div className="max-w-screen-2xl h-full mx-auto px-4 sm:px-6 lg:px-6">
+        <IdeaDetailHeader onBack={() => router.back()} isSaving={isSaving} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12 mt-8">
-        {/* Kolom Kiri: Workbench (Editor) dengan ScrollArea */}
-        <div className="lg:col-span-2">
-          <ScrollArea className="h-[calc(100vh-200px)] pr-4">
-            {editor && <IdeaEditor editor={editor} />}
-          </ScrollArea>
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12 mt-8">
+          {/* Kolom Kiri: Workbench (Editor) dengan ScrollArea */}
+          <div className="lg:col-span-2">
+            <ScrollArea className="h-[calc(100vh-200px)] pr-4">
+              {editor && <IdeaEditor editor={editor} />}
+            </ScrollArea>
+          </div>
 
-        {/* Kolom Kanan: Project Info Sidebar */}
-        <div className="lg:col-span-1 mt-8 lg:mt-0">
-          <ScrollArea className="h-[calc(100vh-200px)] pr-2">
-            <ProjectInfoSidebar project={idea} onUpdate={refreshIdea} />
-          </ScrollArea>
+          {/* Kolom Kanan: Project Info Sidebar */}
+          <div className="lg:col-span-1 mt-8 lg:mt-0">
+            <div className="mb-8">
+              <ProjectInfoSidebar project={idea} onUpdate={refreshIdea} />
+            </div>
+            <div className="mt-auto p-2 border-t border-border/50 flex-shrink-0 text-center">
+              <Button
+                variant="outline"
+                className="w-full p-6 mt-8 border-red-500 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                disabled={isDeleting}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Idea
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Komponen Dialog Konfirmasi Hapus */}
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete this entire project permanently?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              TThis action cannot be undone. This will permanently delete the
+              workspace, including all pages and files. Please type the name of
+              the workspace to confirm.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {/* --- PERBAIKAN 2: Placeholder Dinamis --- */}
+          <div className="my-2 space-y-2">
+            <Input
+              value={deleteConfirmationInput}
+              onChange={(e) => {
+                setDeleteConfirmationInput(e.target.value);
+                if (deleteError) setDeleteError(null);
+              }}
+              placeholder={`${idea.title}`}
+              className="my-2"
+              autoFocus
+            />
+            {deleteError && (
+              <p className="text-sm text-red-600">{deleteError}</p>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              disabled={isDeleteButtonDisabled}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Yes, delete this project"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

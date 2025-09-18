@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import createClient from "@/utils/supabase/server";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 interface GeneratedBlueprint {
   projectData: {
@@ -121,21 +122,55 @@ export async function updateIdea(formData: FormData) {
 /**
  * Menghapus sebuah ide berdasarkan ID.
  */
-export async function deleteIdea(id: string) {
-  // const cookieStore = cookies();
+export async function deleteIdea(projectId: string) {
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "Authentication required." };
 
-  const { error } = await supabase
-    .from("projects")
-    .delete()
-    .match({ id: id, user_id: user.id });
-  if (error) {
-    console.error("Supabase delete error:", error);
+  if (!user) {
+    return { success: false, error: "Authentication required" };
+  }
+
+  try {
+    const { error: workbenchError } = await supabase
+      .from("workbench_content")
+      .delete()
+      .match({ project_id: projectId });
+
+    if (workbenchError) {
+      if (workbenchError.code !== "PGRST116") {
+        throw new Error(
+          `Failed to delete workbench content: ${workbenchError.message}`
+        );
+      }
+    }
+
+    const { error: versionsError } = await supabase
+      .from("blueprint_versions")
+      .delete()
+      .match({ project_id: projectId });
+
+    if (versionsError) {
+      if (versionsError.code !== "PGRST116") {
+        throw new Error(
+          `Failed to delete blueprint versions: ${versionsError.message}`
+        );
+      }
+    }
+
+    const { error: projectError } = await supabase
+      .from("projects")
+      .delete()
+      .match({ id: projectId, user_id: user.id });
+
+    if (projectError) {
+      throw new Error(`Failed to delete the project: ${projectError.message}`);
+    }
+
+    revalidatePath("/dashboard");
+  } catch (error: any) {
+    console.error("Failed during delete transaction:", error);
     return { success: false, error: error.message };
   }
 

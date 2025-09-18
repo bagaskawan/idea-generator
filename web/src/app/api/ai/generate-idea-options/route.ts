@@ -29,6 +29,7 @@ export async function POST(req: Request) {
       ---
       Your task is to act as a creative project architect. Generate 3 distinct and creative project ideas.
       Return the ideas as a JSON object with an "ideas" key containing an array that conforms to the provided schema.
+      Language Match: Always ask the question in the same language as the user's interest and prior conversation.
     `;
 
     const result = await model.generateContent(prompt);
