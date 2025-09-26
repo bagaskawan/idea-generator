@@ -1,14 +1,13 @@
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/shared/ui/card";
 import { cn } from "@/lib/utils";
-import { GoogleButton } from "@/components/auth/GoogleButton";
-import { GithubButton } from "@/components/auth/GithubButton";
+import { GoogleButton } from "@/components/modules/auth/GoogleButton";
+import { GithubButton } from "@/components/modules/auth/GithubButton";
 
 import Image from "next/image";
-import { signInWithGoogle, signInWithGithub } from "@/lib/auth-actions";
+import { signInWithGoogle, signInWithGithub } from "@/lib/actions/auth-actions";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-
 
 export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);

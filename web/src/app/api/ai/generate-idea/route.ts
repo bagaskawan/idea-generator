@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-2.5-flash",
     });
 
     // --- PROMPT BARU YANG DIOPTIMALKAN UNTUK STRUKTUR DATABASE BARU ---
@@ -45,28 +45,7 @@ export async function POST(request: Request) {
 
       This section is a structured metadata summary of the project. It MUST include:
 
-      title: (string) A short, modern, and professional project title. Use 1–2 words only. 
-      for example:
-        Nuansa Modern & Futuristik
-        - Orbit → simple, mengesankan ekosistem yang terus bergerak.
-        - Neura → terinspirasi dari neural/AI, cocok untuk produk pintar.
-        - Verta → dari kata vertical, kesan solid & scalable.
-        - Zyra → nuansa futuristik, pendek, dan mudah diingat.
-        - Quantis → kesan analitik, data, dan presisi.
-        Nuansa Produktivitas & Solusi
-        - Strive → melambangkan perjuangan menuju hasil.
-        - Focusly → pas untuk aplikasi produktivitas/goal tracking.
-        - Tracko → cocok untuk aplikasi monitoring atau tracker.
-        - Planova → dari plan + nova, rencana baru yang bersinar.
-        - Clario → kesan jernih & terarah, pas untuk app manajemen.
-        Nuansa Lifestyle & Engagement
-        - Glow → simpel, memberi kesan positif & hidup.
-        - Pulsefy → cocok untuk sesuatu yang real-time & engaging.
-        - Mozaic → menggambarkan keberagaman yang menyatu.
-        - Lifted → memberi nuansa naik level, berkembang.
-        - Habitu → bagus untuk aplikasi habit-tracking atau wellness.
-
-    problem_statement: (string) A concise, single paragraph explaining the core problem this application solves.
+      problem_statement: (string) A concise, single paragraph explaining the core problem this application solves.
 
       target_audience: (array of objects) Each object has "icon" and "text" fields.
       Example: [{"icon": "users", "text": "Fitness enthusiasts of all levels"}].
@@ -84,13 +63,13 @@ export async function POST(request: Request) {
       This section is a detailed narrative blueprint.
       👉 All content MUST be written in the same language as ${interest} (if the user’s input is in English → output English, if Indonesian → output Indonesian).
 
-      ## User Stories
+      ### User Stories
       Write multiple user stories from different perspectives (end-users, admins, stakeholders). Each story should follow the As a [role], I want [feature], so that [benefit] format. Ensure 5–7 meaningful stories are provided.
 
-      ## System Architecture
+      ### System Architecture
       Provide a clear description of the proposed architecture, including frontend, backend, database, infrastructure, and third-party services. Mention possible integrations, scalability approach, and security considerations. This should feel like a CTO-level overview.
 
-      ## API Endpoints
+      ### API Endpoints
       List the key API endpoints in a structured format. For each endpoint, include:
 
       HTTP Method (GET, POST, PUT, DELETE)
@@ -101,19 +80,21 @@ export async function POST(request: Request) {
 
       Expected request and response structure (summary, not full schema)
 
-      ## Roadmap
+      ### Roadmap
       Provide a phased roadmap (e.g., MVP, Phase 2, Phase 3). Each phase should include milestones, expected outcomes, and value delivered to users. Minimum of 3 phases.
 
-      ## Task Breakdown
-      Break down the project into actionable tasks. Categorize into Frontend, Backend, Database, Infrastructure/DevOps, and QA/Testing. Each category should list 5–10 concrete tasks. This breakdown should feel like a realistic task list for a dev team.
+      ### Task Breakdown
+      Break down the project into actionable tasks. Categorize into Frontend, Backend, Database, Infrastructure/DevOps, and QA/Testing. Each category should list 5–10 concrete tasks. This breakdown should feel like a realistic task list for a dev team. Break down tasks into categories (Frontend, Backend, etc.) using sub-headings (###) and checklists (- [ ] Task).
 
       🔹 Important Notes
 
-      All narrative text in workbenchContent MUST follow the same language as ${interest}.
-
-      Ensure the JSON is perfectly valid (parsable).
-
-      Avoid extra commentary, explanations, or markdown outside the JSON structure.
+      - All narrative text in workbenchContent MUST follow the same language as ${JSON.stringify(
+        conversation,
+        null,
+        2
+      )}.
+      - Ensure the overall output is a perfectly valid, parsable JSON object.
+      - The value for "workbenchContent" must be a single string containing formatted markdown, not a JSON object.
     `;
     // --- AKHIR DARI PROMPT BARU ---
 

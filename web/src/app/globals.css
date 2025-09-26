@@ -168,3 +168,7 @@
 .focus-visible\:ring-ring\/50:focus-visible {
   --tw-ring-color: none;
 }
+
+.focus-visible\:border-ring:focus-visible {
+  border-color: none;
+}

@@ -19,17 +19,48 @@ export async function POST(req: Request) {
     }
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-2.5-flash",
     });
 
     const prompt = `
-      Based on the user's initial interest "${interest}" and this interview history:
-      ---
-      ${JSON.stringify(conversation, null, 2)}
-      ---
-      Your task is to act as a creative project architect. Generate 3 distinct and creative project ideas.
-      Return the ideas as a JSON object with an "ideas" key containing an array that conforms to the provided schema.
-      Language Match: Always ask the question in the same language as the user's interest and prior conversation.
+      You are an expert Creative Project Architect. Your task is to generate 3 distinct and creative project ideas based on the user's interest and our brief conversation.
+
+      **User Input:**
+      - Interest: "${interest}"
+      - Conversation: ${JSON.stringify(conversation, null, 2)}
+
+      **Output Requirements:**
+      Return a single, valid JSON object with a key "ideas". This key must contain an array of exactly 3 project idea objects. Each object MUST conform to this schema:
+      - "projectName": (string) A short, modern, and professional project title. Use 1–2 words only. I recommended for 1 word only. 
+        for example:
+          Nuansa Modern & Futuristik
+          - Orbit → simple, mengesankan ekosistem yang terus bergerak.
+          - Neura → terinspirasi dari neural/AI, cocok untuk produk pintar.
+          - Verta → dari kata vertical, kesan solid & scalable.
+          - Zyra → nuansa futuristik, pendek, dan mudah diingat.
+          - Quantis → kesan analitik, data, dan presisi.
+          Nuansa Produktivitas & Solusi
+          - Strive → melambangkan perjuangan menuju hasil.
+          - Focusly → pas untuk aplikasi produktivitas/goal tracking.
+          - Tracko → cocok untuk aplikasi monitoring atau tracker.
+          - Planova → dari plan + nova, rencana baru yang bersinar.
+          - Clario → kesan jernih & terarah, pas untuk app manajemen.
+          Nuansa Lifestyle & Engagement
+          - Glow → simpel, memberi kesan positif & hidup.
+          - Pulsefy → cocok untuk sesuatu yang real-time & engaging.
+          - Mozaic → menggambarkan keberagaman yang menyatu.
+          - Lifted → memberi nuansa naik level, berkembang.
+          - Habitu → bagus untuk aplikasi habit-tracking atau wellness.
+        - "uniqueSellingProposition": (string) A single, powerful sentence explaining what makes this idea unique.
+        - "projectDescription": (string) A concise, one-paragraph description of the project.
+        - "mvpFeatures": (array of strings) A list of 3-4 essential features for the Minimum Viable Product (MVP).
+        - "icon": (string) Pick ONE appropriate icon name from this list that best represents the idea: "zap", "lightbulb", "rocket", "target", "gem", "heart". <= all is just example for your creativity idea project name.
+
+      **Language Match:** The entire JSON output's string values MUST be in the same language as the user's interest ("${JSON.stringify(
+        conversation,
+        null,
+        2
+      )}").
     `;
 
     const result = await model.generateContent(prompt);

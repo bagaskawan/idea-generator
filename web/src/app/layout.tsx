@@ -1,9 +1,9 @@
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/shared/root/theme-provider";
 import type { Metadata } from "next";
 import "./globals.css";
-import LayoutWrapper from "@/components/LayoutWrapper";
-import { Toaster } from "@/components/ui/sonner";
-import ClientOnly from "@/components/root/ClientOnly";
+import LayoutWrapper from "@/components/shared/layout/LayoutWrapper";
+import { Toaster } from "@/components/shared/ui/sonner";
+import ClientOnly from "@/components/shared/root/ClientOnly";
 import NextTopLoader from "nextjs-toploader";
 import "@blocknote/mantine/style.css";
 import "@blocknote/xl-ai/style.css";
@@ -35,7 +35,7 @@ export default function RootLayout({
       <head></head>
       <body className={barlow.className}>
         <NextTopLoader
-          color="#2f2f2fff"
+          color="#3A6F43"
           initialPosition={0.08}
           crawlSpeed={200}
           height={3}
