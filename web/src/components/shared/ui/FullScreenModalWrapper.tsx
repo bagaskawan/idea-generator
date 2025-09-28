@@ -17,13 +17,13 @@ export function FullScreenModalWrapper({
   const router = useRouter();
 
   return (
-    <div className="w-full mx-auto ">
+    <div className="w-full min-w-full h-full mx-auto ">
       <Link href="/dashboard">
-        <div className="bg-foreground h-10 px-4 sm:px-6 lg:px-8 sticky top-0 z-10 flex justify-end mb-8 cursor-pointer">
+        <div className="bg-foreground h-10 px-4 sm:px-6 lg:px-8 sticky top-0 z-10 flex justify-end cursor-pointer">
           <ButtonX className="text-primary-foreground" />
         </div>
       </Link>
-      <div className="pt-8">{children}</div>
+      <>{children}</>
       <div className="fixed bottom-4 left-4">
         <ThemeToggle />
       </div>

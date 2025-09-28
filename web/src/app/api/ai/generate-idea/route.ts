@@ -9,7 +9,14 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { interest, conversation } = body;
+    const {
+      interest,
+      projectName,
+      projectDescription,
+      mvpFeatures,
+      uniqueSellingProposition,
+      conversation,
+    } = body;
 
     if (!interest || !conversation) {
       return NextResponse.json(
@@ -25,76 +32,43 @@ export async function POST(request: Request) {
     // --- PROMPT BARU YANG DIOPTIMALKAN UNTUK STRUKTUR DATABASE BARU ---
     const prompt = `
       You are "Architech", a world-class CTO and Digital Product Architect.
-      Your mission is to generate a complete, professional project blueprint based on a user interview.
+      Your mission is to expand a chosen project idea into a complete, professional, and actionable project blueprint. You will be given the entire context of the user's journey, from initial interest to the final selected idea.
 
-      Interview Context:
+      ---
+      ## User's Journey Context
+      1.  **Initial Interest:** "${interest}"
+      2.  **Clarification Interview:** ${JSON.stringify(conversation, null, 2)}
 
-      Initial Interest: "${interest}"
+      ---
+      ## Selected Project Idea to Elaborate
+      You MUST build the entire blueprint based on the following chosen idea:
+      - **Project Name:** "${projectName}"
+      - **Unique Selling Proposition:** "${uniqueSellingProposition}"
+      - **Core MVP Features:** ${JSON.stringify(mvpFeatures, null, 2)}
+      ---
 
-      Conversation Q&A: ${JSON.stringify(conversation, null, 2)}
+      🔹 **OUTPUT REQUIREMENTS**
 
-      🔹 Output Requirements
+      Your output MUST be a single, valid JSON object with two top-level keys: \`projectData\` and \`workbenchContent\`.
 
-      Your output MUST be a single, valid JSON object with two top-level keys:
+      1.  **projectData**: A structured metadata summary. It MUST include:
+          * **title**: (string) Use the exact Project Name from the user's selection: "${projectName}".
+          * **problem_statement**: (string) A concise paragraph explaining the core problem, derived from the conversation and selected idea.
+          * **target_audience**: (array of objects) Each with "icon" and "text" fields. Generate 2-3 specific audiences. Example: [{"icon": "student", "text": "High school students preparing for exams"}].
+          * **success_metrics**: (array of objects) Each with "type" ("Kuantitatif" or "Kualitatif") and "text". Generate 2-3 key metrics. Example: [{"type": "Kuantitatif", "text": "Achieve 1,000 monthly active users within 6 months"}].
+          * **tech_stack**: (array of strings) A relevant list of technologies. Example: ["Next.js", "TypeScript", "Supabase", "Vercel"].
 
-      projectData
+      2.  **workbenchContent**: A detailed narrative blueprint as a single Markdown string. The language used MUST match the user's input language.
+          * **### User Stories**: Expand on the "Core MVP Features". Write 5-7 detailed user stories from different perspectives (e.g., "As a new user...", "As an administrator...").
+          * **### System Architecture**: Describe a clear architecture (Frontend, Backend, Database, Auth, Deployment). Explain how the tech stack choices support the project's goals.
+          * **### API Endpoints**: List key API endpoints with HTTP Method, Path, Description, and a summary of the expected request/response. This should directly relate to implementing the user stories.
+          * **### Roadmap**: Create a phased roadmap (e.g., MVP, Phase 2, Future). Each phase must have clear milestones and outcomes, starting with the "Core MVP Features".
+          * **### Task Breakdown**: Break down the MVP phase into actionable tasks categorized by Frontend, Backend, Database, and DevOps/Testing. Create 5-10 specific tasks per category.
 
-      workbenchContent
-
-      1. projectData
-
-      This section is a structured metadata summary of the project. It MUST include:
-
-      problem_statement: (string) A concise, single paragraph explaining the core problem this application solves.
-
-      target_audience: (array of objects) Each object has "icon" and "text" fields.
-      Example: [{"icon": "users", "text": "Fitness enthusiasts of all levels"}].
-      → Generate 2–3 audiences.
-
-      success_metrics: (array of objects) Each object has "type" ("Kuantitatif" or "Kualitatif") and "text".
-      Example: [{"type": "Kuantitatif", "text": "Achieve 1000 monthly active users within 6 months"}].
-      → Generate 2–3 metrics.
-
-      tech_stack: (array of strings) A simple list of relevant technologies.
-      Example: ["React", "TypeScript", "Node.js", "PostgreSQL", "Vercel"].
-
-      2. workbenchContent
-
-      This section is a detailed narrative blueprint.
-      👉 All content MUST be written in the same language as ${interest} (if the user’s input is in English → output English, if Indonesian → output Indonesian).
-
-      ### User Stories
-      Write multiple user stories from different perspectives (end-users, admins, stakeholders). Each story should follow the As a [role], I want [feature], so that [benefit] format. Ensure 5–7 meaningful stories are provided.
-
-      ### System Architecture
-      Provide a clear description of the proposed architecture, including frontend, backend, database, infrastructure, and third-party services. Mention possible integrations, scalability approach, and security considerations. This should feel like a CTO-level overview.
-
-      ### API Endpoints
-      List the key API endpoints in a structured format. For each endpoint, include:
-
-      HTTP Method (GET, POST, PUT, DELETE)
-
-      Path (e.g., /api/users)
-
-      Brief description of what it does
-
-      Expected request and response structure (summary, not full schema)
-
-      ### Roadmap
-      Provide a phased roadmap (e.g., MVP, Phase 2, Phase 3). Each phase should include milestones, expected outcomes, and value delivered to users. Minimum of 3 phases.
-
-      ### Task Breakdown
-      Break down the project into actionable tasks. Categorize into Frontend, Backend, Database, Infrastructure/DevOps, and QA/Testing. Each category should list 5–10 concrete tasks. This breakdown should feel like a realistic task list for a dev team. Break down tasks into categories (Frontend, Backend, etc.) using sub-headings (###) and checklists (- [ ] Task).
-
-      🔹 Important Notes
-
-      - All narrative text in workbenchContent MUST follow the same language as ${JSON.stringify(
-        conversation,
-        null,
-        2
-      )}.
-      - Ensure the overall output is a perfectly valid, parsable JSON object.
-      - The value for "workbenchContent" must be a single string containing formatted markdown, not a JSON object.
+      🔹 **IMPORTANT RULES**
+      - The entire output MUST be a perfectly valid, parsable JSON.
+      - The value for "workbenchContent" must be a single string containing formatted markdown.
+      - The blueprint must be a direct, logical, and detailed expansion of the **Selected Project Idea** provided above.
     `;
     // --- AKHIR DARI PROMPT BARU ---
 

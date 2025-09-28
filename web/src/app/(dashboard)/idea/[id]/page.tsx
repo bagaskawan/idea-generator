@@ -11,7 +11,9 @@ export default async function IdeaDetailPage({ params }: IdeaDetailPageProps) {
 
   return (
     <FullScreenModalWrapper>
-      <IdeaDetailView id={id} />
+      <div className="mt-18">
+        <IdeaDetailView id={id} />
+      </div>
     </FullScreenModalWrapper>
   );
 }

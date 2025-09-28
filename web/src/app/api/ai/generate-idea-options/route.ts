@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
       **Output Requirements:**
       Return a single, valid JSON object with a key "ideas". This key must contain an array of exactly 3 project idea objects. Each object MUST conform to this schema:
-      - "projectName": (string) A short, modern, and professional project title. Use 1–2 words only. I recommended for 1 word only. 
+      - "projectName": (string) A short, modern, and professional project title. Use 1–2 words only. I recommended for 1 word only.
         for example:
           Nuansa Modern & Futuristik
           - Orbit → simple, mengesankan ekosistem yang terus bergerak.
@@ -51,10 +51,13 @@ export async function POST(req: Request) {
           - Mozaic → menggambarkan keberagaman yang menyatu.
           - Lifted → memberi nuansa naik level, berkembang.
           - Habitu → bagus untuk aplikasi habit-tracking atau wellness.
+        <= all is just example for your creativity idea project name.
+        
+        - "reasonProjectName": The reason why the ProjectName was given.
         - "uniqueSellingProposition": (string) A single, powerful sentence explaining what makes this idea unique.
         - "projectDescription": (string) A concise, one-paragraph description of the project.
         - "mvpFeatures": (array of strings) A list of 3-4 essential features for the Minimum Viable Product (MVP).
-        - "icon": (string) Pick ONE appropriate icon name from this list that best represents the idea: "zap", "lightbulb", "rocket", "target", "gem", "heart". <= all is just example for your creativity idea project name.
+        - "icon": (string) Pick ONE appropriate icon name from this list that best represents the idea: "zap", "lightbulb", "rocket", "target", "gem", "heart". 
 
       **Language Match:** The entire JSON output's string values MUST be in the same language as the user's interest ("${JSON.stringify(
         conversation,

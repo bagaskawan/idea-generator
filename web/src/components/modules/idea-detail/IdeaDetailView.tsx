@@ -170,9 +170,11 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
 
           {/* Kolom Kanan: Project Info Sidebar */}
           <div className="lg:col-span-1 mt-8 lg:mt-0">
-            <div className="mb-8">
-              <ProjectInfoSidebar project={idea} onUpdate={refreshIdea} />
-            </div>
+            <ScrollArea className="h-[calc(100vh-200px)] pr-4">
+              <div className="mb-8">
+                <ProjectInfoSidebar project={idea} onUpdate={refreshIdea} />
+              </div>
+            </ScrollArea>
             <div className="mt-auto p-2 border-t border-border/50 flex-shrink-0 text-center">
               <Button
                 variant="outline"

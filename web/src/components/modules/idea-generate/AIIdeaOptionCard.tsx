@@ -9,11 +9,17 @@ import {
   CardContent, // <-- Impor CardContent
 } from "@/components/shared/ui/card";
 import { Button } from "@/components/shared/ui/button";
-import { ArrowRight, CheckCircle2, Icon } from "lucide-react"; // <-- Impor ikon baru
+import { ArrowRight, CheckCircle2, Info, Icon } from "lucide-react"; // <-- Impor ikon baru
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/shared/ui/popover";
 
 // --- PERBAIKAN 1: Sesuaikan Tipe dengan JSON yang Anda berikan ---
 export type IdeaOption = {
   projectName: string;
+  reasonProjectName: string;
   projectDescription: string; // Deskripsi ini tidak ditampilkan, tapi bagus untuk data
   uniqueSellingProposition: string;
   mvpFeatures: string[]; // Ini adalah kunci yang ada di JSON Anda
@@ -33,8 +39,7 @@ export function AIIdeaOptionCard({
   return (
     // --- PERBAIKAN 2: Desain Kartu yang Lebih Interaktif dan Premium ---
     <div
-      onClick={!isLoading ? onSelect : undefined} // Seluruh kartu bisa diklik
-      className="group relative flex flex-col h-full bg-card border rounded-2xl cursor-pointer
+      className="group relative flex flex-col h-full bg-card border rounded-2xl
                  shadow-sm hover:shadow-primary/20 hover:border-primary/50 transition-all duration-300"
     >
       {/* Efek gradien saat hover */}
@@ -42,9 +47,19 @@ export function AIIdeaOptionCard({
 
       <div className="p-6 flex-grow flex flex-col z-10">
         <CardHeader className="p-0">
-          <CardTitle className="text-2xl font-bold tracking-tight">
-            {idea.projectName}
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-2xl font-bold tracking-tight">
+              {idea.projectName}
+            </CardTitle>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Info className="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground transition-colors" />
+              </PopoverTrigger>
+              <PopoverContent side="top" className="w-80 text-sm" align="start">
+                {idea.reasonProjectName}
+              </PopoverContent>
+            </Popover>
+          </div>
           <CardDescription className="pt-2 text-base text-muted-foreground">
             {idea.uniqueSellingProposition}
           </CardDescription>
@@ -70,9 +85,10 @@ export function AIIdeaOptionCard({
 
         <CardFooter className="p-0 mt-8">
           <div
+            onClick={!isLoading ? onSelect : undefined}
             className="w-full h-12 text-base font-semibold flex items-center justify-center 
                        bg-primary text-primary-foreground rounded-lg transition-all duration-300
-                       group-hover:bg-primary/90"
+                       group-hover:bg-primary/90 cursor-pointer"
           >
             Generate Blueprint
             <ArrowRight className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />

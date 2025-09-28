@@ -2,11 +2,16 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
+import { mockStartInterviewResponse } from "@/lib/testing/mock-ai-data";
 
 // Gunakan kunci API sisi server yang lebih aman
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(request: Request) {
+  if (process.env.MOCK_AI_RESPONSES === "true") {
+    const mockData = await mockStartInterviewResponse();
+    return NextResponse.json(mockData);
+  }
   try {
     const body = await request.json();
     const { interest } = body;
