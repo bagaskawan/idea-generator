@@ -15,6 +15,7 @@ export async function POST(request: Request) {
       projectDescription,
       mvpFeatures,
       uniqueSellingProposition,
+      reasonProjectName,
       conversation,
     } = body;
 
@@ -38,6 +39,7 @@ export async function POST(request: Request) {
       ## User's Journey Context
       1.  **Initial Interest:** "${interest}"
       2.  **Clarification Interview:** ${JSON.stringify(conversation, null, 2)}
+      3.  **Project Description:** "${projectDescription}"
 
       ---
       ## Selected Project Idea to Elaborate
@@ -53,17 +55,33 @@ export async function POST(request: Request) {
 
       1.  **projectData**: A structured metadata summary. It MUST include:
           * **title**: (string) Use the exact Project Name from the user's selection: "${projectName}".
-          * **problem_statement**: (string) A concise paragraph explaining the core problem, derived from the conversation and selected idea.
+          * **title_reason**: (string) Use the exact Title Reason from the user's selection: "${reasonProjectName}".
+          * **problem_statement**: (string) A concise paragraph explaining the core problem, derived from the conversation and selected idea. You can explain and elaboration from "${projectDescription}".
           * **target_audience**: (array of objects) Each with "icon" and "text" fields. Generate 2-3 specific audiences. Example: [{"icon": "student", "text": "High school students preparing for exams"}].
           * **success_metrics**: (array of objects) Each with "type" ("Kuantitatif" or "Kualitatif") and "text". Generate 2-3 key metrics. Example: [{"type": "Kuantitatif", "text": "Achieve 1,000 monthly active users within 6 months"}].
           * **tech_stack**: (array of strings) A relevant list of technologies. Example: ["Next.js", "TypeScript", "Supabase", "Vercel"].
 
       2.  **workbenchContent**: A detailed narrative blueprint as a single Markdown string. The language used MUST match the user's input language.
-          * **### User Stories**: Expand on the "Core MVP Features". Write 5-7 detailed user stories from different perspectives (e.g., "As a new user...", "As an administrator...").
-          * **### System Architecture**: Describe a clear architecture (Frontend, Backend, Database, Auth, Deployment). Explain how the tech stack choices support the project's goals.
-          * **### API Endpoints**: List key API endpoints with HTTP Method, Path, Description, and a summary of the expected request/response. This should directly relate to implementing the user stories.
-          * **### Roadmap**: Create a phased roadmap (e.g., MVP, Phase 2, Future). Each phase must have clear milestones and outcomes, starting with the "Core MVP Features".
-          * **### Task Breakdown**: Break down the MVP phase into actionable tasks categorized by Frontend, Backend, Database, and DevOps/Testing. Create 5-10 specific tasks per category.
+           * **### Fitur Utama (Core Features)**
+              Start by listing the core features based on the "Core MVP Features" provided. Present this as a clear, high-level overview of what the application does.
+
+          * **### Roadmap**
+              Create a phased roadmap (e.g., MVP, Phase 2, Future). The MVP phase must include the core features. Each phase should have clear milestones and outcomes.
+
+          * **### Task Breakdown**
+              Break down the MVP phase into actionable tasks categorized by Frontend, Backend, Database, and DevOps/Testing. Create 5-10 specific tasks per category in a checklist format.
+
+          * **### User Stories**
+              Write 5-7 detailed user stories based on the Core MVP Features. Use the format: "As a [role], I want [feature], so that [benefit]".
+
+          * **### System Architecture**
+              Describe a clear architecture (Frontend, Backend, Database, Auth, Deployment). Explain how the tech stack choices support the project's goals, and mention scalability and security considerations.
+
+          * **### API Endpoints**
+              List key API endpoints with HTTP Method, Path, a brief description, and a summary of the request/response structure.
+
+          * **### Strategi Monetisasi (Monetization Strategy)**
+              Suggest 2-3 potential ways this project could generate revenue (e.g., subscription, freemium, ads, one-time purchase). Briefly explain each strategy.
 
       🔹 **IMPORTANT RULES**
       - The entire output MUST be a perfectly valid, parsable JSON.

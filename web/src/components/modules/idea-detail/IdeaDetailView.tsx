@@ -35,8 +35,16 @@ import "@blocknote/mantine/style.css";
 import "@blocknote/react/style.css";
 import "@blocknote/xl-ai/style.css";
 
+// Definisikan tipe untuk skema database
+interface Table {
+  table_name: string;
+  columns: any[];
+}
+
 import { deleteIdea } from "@/lib/actions/idea-actions";
 import { jsonToMarkdown } from "@/lib/blueprint-parser";
+import { GenerateSchemaButton } from "@/components/modules/idea-detail/GenerateSchemaButton";
+import { DatabaseSchemaDisplay } from "@/components/modules/idea-detail/DatabaseSchema/DatabaseSchemaDisplay";
 
 type IdeaDetailViewProps = {
   id: string;
@@ -48,6 +56,10 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const editor = useBlocknoteEditor();
   const isRealtimeUpdate = useRef(false);
   const { isSaving } = useAutoSave(editor, id, isRealtimeUpdate);
+
+  // Generate Schema
+  const [databaseSchema, setDatabaseSchema] = useState<Table[] | null>(null);
+  const [isGeneratingSchema, setIsGeneratingSchema] = useState(false);
 
   //deleting ideas
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -91,6 +103,50 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
 
     syncEditorContent();
   }, [editor, idea]);
+
+  const handleGenerateSchema = async () => {
+    if (!idea) return;
+
+    setIsGeneratingSchema(true);
+    setDatabaseSchema(null);
+    toast.info("AI is designing your database schema...");
+
+    try {
+      const workbenchContent = idea.workbenchContent?.markdown || "";
+      const problemStatement = idea.problem_statement || "";
+
+      const userStoriesMatch = workbenchContent.match(
+        /### User Stories\s*([\s\S]*?)(?=\n###|$)/
+      );
+      const apiEndpointsMatch = workbenchContent.match(
+        /### API Endpoints\s*([\s\S]*?)(?=\n###|$)/
+      );
+
+      const res = await fetch("/api/ai/generate-database-schema", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: idea.id,
+          projectDescription: problemStatement,
+          userStories: userStoriesMatch ? userStoriesMatch[1].trim() : "",
+          apiEndpoints: apiEndpointsMatch ? apiEndpointsMatch[1].trim() : "",
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to generate schema.");
+      }
+
+      const data = await res.json();
+      setDatabaseSchema(data.schema);
+      toast.success("Database schema generated successfully!");
+    } catch (error: any) {
+      toast.error("Error", { description: error.message });
+    } finally {
+      setIsGeneratingSchema(false);
+    }
+  };
 
   const handleDeleteConfirm = (event: React.MouseEvent) => {
     event.preventDefault(); // Mencegah dialog tertutup secara otomatis
@@ -165,6 +221,20 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
           <div className="lg:col-span-2">
             <ScrollArea className="h-[calc(100vh-200px)] pr-4">
               {editor && <IdeaEditor editor={editor} />}
+
+              {/* --- LOKASI BARU UNTUK MENAMPILKAN HASIL SCHEMA --- */}
+              {isGeneratingSchema && (
+                <div className="text-center mt-12">
+                  <p className="text-muted-foreground animate-pulse">
+                    Analyzing blueprint and building relations...
+                  </p>
+                </div>
+              )}
+              {databaseSchema && (
+                <div className="mt-12">
+                  <DatabaseSchemaDisplay schema={databaseSchema} />
+                </div>
+              )}
             </ScrollArea>
           </div>
 
@@ -176,6 +246,10 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
               </div>
             </ScrollArea>
             <div className="mt-auto p-2 border-t border-border/50 flex-shrink-0 text-center">
+              <GenerateSchemaButton
+                onClick={handleGenerateSchema}
+                isLoading={isGeneratingSchema}
+              />
               <Button
                 variant="outline"
                 className="w-full p-6 mt-8 border-red-500 text-red-500 hover:text-red-600 hover:bg-red-500/10"
@@ -207,7 +281,6 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          {/* --- PERBAIKAN 2: Placeholder Dinamis --- */}
           <div className="my-2 space-y-2">
             <Input
               value={deleteConfirmationInput}

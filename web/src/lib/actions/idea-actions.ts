@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 interface GeneratedBlueprint {
   projectData: {
     title: string;
+    title_reason: string;
     problem_statement: string;
     target_audience: any;
     success_metrics: any;
@@ -38,6 +39,7 @@ export async function addIdea(blueprint: GeneratedBlueprint) {
       target_audience: blueprint.projectData.target_audience,
       success_metrics: blueprint.projectData.success_metrics,
       tech_stack: blueprint.projectData.tech_stack,
+      title_reason: blueprint.projectData.title_reason,
       tags: ["AI-Generated"],
     })
     .select()
