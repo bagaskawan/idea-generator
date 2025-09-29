@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/db/client";
-import { IdeaDetail } from "@/types"; // Gunakan tipe baru
+import { IdeaDetail } from "@/types";
 
 export const useIdea = (id: string) => {
   const [idea, setIdea] = useState<IdeaDetail | null>(null);
@@ -11,11 +11,11 @@ export const useIdea = (id: string) => {
   const fetchIdea = useCallback(async () => {
     if (!id) return;
 
-    // Jangan set loading ke true saat refresh, agar UI tidak berkedip
-    // setLoading(true);
+    setLoading(true);
     setError(null);
 
     try {
+      // Fetch project data
       const { data: projectData, error: projectError } = await supabase
         .from("projects")
         .select("*")
@@ -28,6 +28,7 @@ export const useIdea = (id: string) => {
         );
       }
 
+      // Fetch workbench content
       const { data: workbenchData, error: workbenchError } = await supabase
         .from("workbench_content")
         .select("content")
@@ -37,6 +38,12 @@ export const useIdea = (id: string) => {
       if (workbenchError) {
         console.warn("Could not find workbench content for project:", id);
       }
+
+      // --- TAMBAHAN: Cek keberadaan schema ---
+      const { data: schemaData, error: schemaError } = await supabase
+        .from("database_schemas")
+        .select("project_id", { count: "exact", head: true })
+        .eq("project_id", id);
 
       const formattedData: IdeaDetail = {
         id: projectData.id,
@@ -57,6 +64,7 @@ export const useIdea = (id: string) => {
         workbenchContent: workbenchData
           ? (workbenchData.content as { markdown: string })
           : null,
+        hasSchema: (schemaData?.length ?? 0) > 0,
       };
 
       setIdea(formattedData);

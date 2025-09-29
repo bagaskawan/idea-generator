@@ -1,6 +1,7 @@
 import createClient from "@/lib/db/server";
 import { notFound } from "next/navigation";
 import SchemaView from "@/components/modules/idea-detail/DatabaseSchema/SchemaView";
+import { FullProject, SchemaResponse } from "@/types";
 
 type SchemaPageProps = {
   params: {
@@ -11,33 +12,30 @@ type SchemaPageProps = {
 // Halaman ini mengambil data awal di server
 export default async function SchemaPage({ params }: SchemaPageProps) {
   const supabase = await createClient();
-  const { data: project } = await supabase
+  const { id } = params;
+
+  const { data: project, error: projectError } = await supabase
     .from("projects")
-    .select(
-      `
-      id,
-      title,
-      content,
-      project_data (*)
-    `
-    )
-    .eq("id", params.id)
+    .select("*")
+    .eq("id", id)
     .single();
 
-  if (!project) {
+  if (projectError || !project) {
     notFound();
   }
-  const { data: savedSchema } = await supabase
+  const { data: schemaData, error: schemaError } = await supabase
     .from("database_schemas")
-    .select("schema_data")
-    .eq("project_id", params.id)
+    .select("schema: schema_data")
+    .eq("project_id", id)
     .single();
+
+  const initialSchema = schemaError ? null : (schemaData as SchemaResponse);
 
   return (
     <div className="h-[calc(100vh-80px)] w-full">
       <SchemaView
-        project={project}
-        initialSchema={savedSchema?.schema_data || null}
+        project={project as FullProject}
+        initialSchema={initialSchema}
       />
     </div>
   );

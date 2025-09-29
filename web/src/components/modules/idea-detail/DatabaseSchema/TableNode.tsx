@@ -14,14 +14,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/shared/ui/tooltip";
+import { Column } from "@/types";
 
-// Ini adalah komponen kustom untuk setiap node (tabel)
-const TableNode = ({ data }: { data: any }) => {
-  const { table } = data;
+interface TableNodeData {
+  name: string;
+  columns: (Column & { is_foreign_key?: boolean; references?: string })[];
+}
+
+const TableNode = ({ data }: { data: TableNodeData }) => {
+  const { name, columns } = data;
+
+  if (!name || !columns) {
+    return null;
+  }
 
   return (
-    <Card className="w-64 bg-background shadow-lg border-2">
-      {/* Handle adalah titik koneksi untuk garis relasi */}
+    <Card className="w-64 bg-background shadow-lg border-2 min-h-[220px]">
       <Handle
         type="source"
         position={Position.Right}
@@ -36,12 +44,12 @@ const TableNode = ({ data }: { data: any }) => {
       <CardHeader className="py-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Database className="w-4 h-4 text-muted-foreground" />
-          {table.table_name}
+          {name}
         </CardTitle>
       </CardHeader>
       <CardContent className="text-xs pt-0 pb-3">
         <ul className="space-y-1">
-          {table.columns.map((col: any) => (
+          {columns.map((col) => (
             <li
               key={col.name}
               className="flex justify-between items-center border-t py-1"
@@ -57,10 +65,16 @@ const TableNode = ({ data }: { data: any }) => {
                     </Tooltip>
                   </TooltipProvider>
                 )}
-                {col.is_foreign_key && (
-                  <Link2 className="w-4 h-4 text-cyan-500">
-                    <title>{`Foreign Key: ${col.references}`}</title>
-                  </Link2>
+                {/* --- PERBAIKAN FINAL: Gunakan 'references' atau 'is_foreign_key' --- */}
+                {(col.references || col.is_foreign_key) && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link2 className="w-4 h-4 text-cyan-500" />
+                      </TooltipTrigger>
+                      <TooltipContent>{`Foreign Key: ${col.references}`}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
                 <span className="font-mono">{col.name}</span>
               </div>

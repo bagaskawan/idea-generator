@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ScrollArea } from "@/components/shared/ui/scroll-area";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Skeleton } from "@/components/shared/ui/skeleton";
 import { Button } from "@/components/shared/ui/button";
 import { toast } from "sonner";
@@ -17,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/shared/ui/alert-dialog";
 import { Input } from "@/components/shared/ui/input";
-import { Trash2 } from "lucide-react";
+import { Database, Trash2, Workflow } from "lucide-react";
 
 // Custom hooks
 import { useIdea } from "@/hooks/api/useIdeaDetail";
@@ -29,22 +30,15 @@ import { useBlocknoteEditor } from "@/hooks/util/useBlocknoteEditor";
 import IdeaDetailHeader from "@/components/modules/idea-detail/IdeaDetailHeader";
 import IdeaEditor from "@/components/modules/idea-detail/IdeaEditor";
 import ProjectInfoSidebar from "@/components/modules/idea-detail/ProjectInfoSidebar";
+import { LoadingState } from "@/components/modules/idea-generate/LoadingState"; // Import LoadingState
+import { GenerateSchemaButton } from "@/components/modules/idea-detail/GenerateSchemaButton";
 
 // BlockNote Styles
 import "@blocknote/mantine/style.css";
 import "@blocknote/react/style.css";
 import "@blocknote/xl-ai/style.css";
 
-// Definisikan tipe untuk skema database
-interface Table {
-  table_name: string;
-  columns: any[];
-}
-
 import { deleteIdea } from "@/lib/actions/idea-actions";
-import { jsonToMarkdown } from "@/lib/blueprint-parser";
-import { GenerateSchemaButton } from "@/components/modules/idea-detail/GenerateSchemaButton";
-import { DatabaseSchemaDisplay } from "@/components/modules/idea-detail/DatabaseSchema/DatabaseSchemaDisplay";
 
 type IdeaDetailViewProps = {
   id: string;
@@ -57,9 +51,9 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const isRealtimeUpdate = useRef(false);
   const { isSaving } = useAutoSave(editor, id, isRealtimeUpdate);
 
-  // Generate Schema
-  const [databaseSchema, setDatabaseSchema] = useState<Table[] | null>(null);
+  // --- PERBAIKAN: State untuk mengelola proses generate schema ---
   const [isGeneratingSchema, setIsGeneratingSchema] = useState(false);
+  const [hasSchema, setHasSchema] = useState(false);
 
   //deleting ideas
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -69,30 +63,32 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
 
   useRealtimeUpdates(id, editor, isRealtimeUpdate);
 
+  // --- PERBAIKAN: Cek apakah schema sudah ada saat data 'idea' dimuat ---
   useEffect(() => {
-    // Reset input konfirmasi setiap kali dialog ditutup
+    if (idea?.hasSchema) {
+      setHasSchema(true);
+    }
+  }, [idea]);
+
+  useEffect(() => {
     if (!isDeleteDialogOpen) {
       setDeleteConfirmationInput("");
       setDeleteError(null);
     }
   }, [isDeleteDialogOpen]);
 
-  // useEffect sekarang akan mengisi editor dari workbenchContent.markdown
   useEffect(() => {
     const syncEditorContent = async () => {
       if (editor && idea?.workbenchContent?.markdown) {
-        // Cek jika editor benar-benar kosong untuk menghindari penimpaan yang tidak perlu
         const blocks = editor.topLevelBlocks;
         const isEditorEmpty =
           blocks.length === 0 ||
           (blocks.length === 1 && !blocks[0].content?.toString.length);
 
         if (isEditorEmpty && (idea.title || idea.workbenchContent)) {
-          // Gabungkan title sebagai H1 dengan sisa konten dari workbench
           const fullMarkdownContent = `# ${idea.title}\n\n${
             idea.workbenchContent?.markdown || ""
           }`;
-
           const newBlocks = await editor.tryParseMarkdownToBlocks(
             fullMarkdownContent
           );
@@ -100,7 +96,6 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
         }
       }
     };
-
     syncEditorContent();
   }, [editor, idea]);
 
@@ -108,13 +103,11 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
     if (!idea) return;
 
     setIsGeneratingSchema(true);
-    setDatabaseSchema(null);
     toast.info("AI is designing your database schema...");
 
     try {
       const workbenchContent = idea.workbenchContent?.markdown || "";
       const problemStatement = idea.problem_statement || "";
-
       const userStoriesMatch = workbenchContent.match(
         /### User Stories\s*([\s\S]*?)(?=\n###|$)/
       );
@@ -138,25 +131,25 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
         throw new Error(errorData.error || "Failed to generate schema.");
       }
 
-      const data = await res.json();
-      setDatabaseSchema(data.schema);
+      await res.json();
       toast.success("Database schema generated successfully!");
+
+      // --- PERBAIKAN: Redirect ke halaman schema setelah berhasil ---
+      router.push(`/idea/${id}/schema`);
     } catch (error: any) {
       toast.error("Error", { description: error.message });
-    } finally {
-      setIsGeneratingSchema(false);
+      setIsGeneratingSchema(false); // Pastikan loading berhenti jika ada error
     }
+    // Tidak perlu 'finally' karena kita redirect on success
   };
 
   const handleDeleteConfirm = (event: React.MouseEvent) => {
-    event.preventDefault(); // Mencegah dialog tertutup secara otomatis
+    event.preventDefault();
     if (!idea) return;
-    console.log("Idea: ", deleteConfirmationInput);
-    console.log("Idea Title: ", idea.title);
 
     if (deleteConfirmationInput !== idea.title) {
       setDeleteError(`Please type ${idea.title} to confirm.`);
-      return; // Hentikan fungsi jika tidak cocok
+      return;
     }
 
     startDeleteTransition(async () => {
@@ -167,7 +160,7 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
         });
       } else {
         toast.success("Idea successfully deleted");
-        router.push("/dashboard"); // Redirect setelah berhasil hapus
+        router.push("/dashboard");
       }
     });
   };
@@ -190,6 +183,20 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
     );
   }
 
+  // --- PERBAIKAN: Tampilkan loading state terpusat ---
+  if (isGeneratingSchema) {
+    return (
+      <LoadingState
+        title="AI is Architecting Your Schema..."
+        texts={[
+          "Analyzing blueprint and building relations...",
+          "Defining tables and columns...",
+          "Finalizing the structure...",
+        ]}
+      />
+    );
+  }
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-screen -mt-20">
@@ -209,36 +216,18 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
     return <div className="text-center mt-20">Proyek tidak ditemukan.</div>;
   }
 
-  const isDeleteButtonDisabled = isDeleting;
-
   return (
     <>
       <div className="max-w-screen-2xl h-full mx-auto px-4 sm:px-6 lg:px-6">
         <IdeaDetailHeader isSaving={isSaving} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12 mt-8">
-          {/* Kolom Kiri: Workbench (Editor) dengan ScrollArea */}
           <div className="lg:col-span-2">
             <ScrollArea className="h-[calc(100vh-200px)] pr-4">
               {editor && <IdeaEditor editor={editor} />}
-
-              {/* --- LOKASI BARU UNTUK MENAMPILKAN HASIL SCHEMA --- */}
-              {isGeneratingSchema && (
-                <div className="text-center mt-12">
-                  <p className="text-muted-foreground animate-pulse">
-                    Analyzing blueprint and building relations...
-                  </p>
-                </div>
-              )}
-              {databaseSchema && (
-                <div className="mt-12">
-                  <DatabaseSchemaDisplay schema={databaseSchema} />
-                </div>
-              )}
             </ScrollArea>
           </div>
 
-          {/* Kolom Kanan: Project Info Sidebar */}
           <div className="lg:col-span-1 mt-8 lg:mt-0">
             <ScrollArea className="h-[calc(100vh-200px)] pr-4">
               <div className="mb-8">
@@ -246,10 +235,20 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
               </div>
             </ScrollArea>
             <div className="mt-auto p-2 border-t border-border/50 flex-shrink-0 text-center">
-              <GenerateSchemaButton
-                onClick={handleGenerateSchema}
-                isLoading={isGeneratingSchema}
-              />
+              {/* --- PERBAIKAN: Tombol kondisional --- */}
+              {hasSchema ? (
+                <Link href={`/idea/${id}/schema`} passHref legacyBehavior>
+                  <Button className="w-full p-6 mt-8">
+                    <Workflow className="w-4 h-4 mr-2" />
+                    View Database Schema
+                  </Button>
+                </Link>
+              ) : (
+                <GenerateSchemaButton
+                  onClick={handleGenerateSchema}
+                  isLoading={isGeneratingSchema}
+                />
+              )}
               <Button
                 variant="outline"
                 className="w-full p-6 mt-8 border-red-500 text-red-500 hover:text-red-600 hover:bg-red-500/10"
@@ -264,7 +263,6 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
         </div>
       </div>
 
-      {/* Komponen Dialog Konfirmasi Hapus */}
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -276,8 +274,7 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
             </AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              workspace, including all pages and files. Please type the name of
-              the workspace to confirm.
+              workspace. Please type the name of the workspace to confirm.
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -301,7 +298,7 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
-              disabled={isDeleteButtonDisabled}
+              disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
               {isDeleting ? "Deleting..." : "Yes, delete this project"}

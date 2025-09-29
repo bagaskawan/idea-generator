@@ -25,7 +25,28 @@ export interface WorkbenchContent {
 // Gabungkan keduanya menjadi satu tipe utama untuk detail ide
 export interface IdeaDetail extends ProjectData {
   workbenchContent: WorkbenchContent | null;
+  hasSchema?: boolean;
 }
+
+export type FullProject = ProjectData;
+
+// --- PERBAIKAN: Tambahkan 'export' pada Column dan Table ---
+export interface Column {
+  name: string;
+  type: string;
+  is_primary_key?: boolean;
+  foreign_key_to?: string;
+}
+
+export interface Table {
+  table_name: string;
+  columns: Column[];
+}
+
+export interface SchemaResponse {
+  schema: Table[];
+}
+// --- AKHIR PERBAIKAN ---
 
 export type ProjectCardProps = {
   id: string;
