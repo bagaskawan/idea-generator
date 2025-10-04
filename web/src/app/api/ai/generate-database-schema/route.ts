@@ -7,8 +7,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 export async function POST(request: Request) {
   const supabase = await createClient();
   try {
-    const { projectId, projectDescription, userStories, apiEndpoints } =
-      await request.json();
+    const { projectId, projectContext } = await request.json();
 
     if (!projectId) {
       return NextResponse.json(
@@ -17,9 +16,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!userStories || !apiEndpoints) {
+    if (!projectContext) {
       return NextResponse.json(
-        { error: "Project context is required." },
+        { error: "Project context is requiredsss." },
         { status: 400 }
       );
     }
@@ -30,10 +29,8 @@ export async function POST(request: Request) {
       You are "Schema-DB", a professional Database Architect. Your mission is to design a clear, normalized, and efficient relational database schema based on a project's description, user stories, and API endpoints.
 
       ---
-      ## Project Context
-      - **Description:** ${projectDescription}
-      - **User Stories:** ${userStories}
-      - **API Endpoints:** ${apiEndpoints}
+      ## Full Project Context
+      ${projectContext}
       ---
 
       🔹 **TASK**

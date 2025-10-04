@@ -23,6 +23,19 @@ export default async function SchemaPage({ params }: SchemaPageProps) {
   if (projectError || !project) {
     notFound();
   }
+
+  //get data workbench_content
+  const { data: workbenchData } = await supabase
+    .from("workbench_content")
+    .select("content")
+    .eq("project_id", id)
+    .single();
+
+  const fullProjectData = {
+    ...project,
+    workbenchContent: workbenchData?.content as { markdown: string } | null,
+  };
+
   const { data: schemaData, error: schemaError } = await supabase
     .from("database_schemas")
     .select("schema: schema_data")

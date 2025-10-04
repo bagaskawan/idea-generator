@@ -10,7 +10,7 @@ import { createAIExtension } from "@blocknote/xl-ai";
 const google = createGoogleGenerativeAI({
   apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY!,
 });
-const model = google("gemini-1.5-flash-latest");
+const model = google("gemini-2.5-flash");
 const aiExtension = createAIExtension({ model });
 
 /**

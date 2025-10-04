@@ -161,6 +161,19 @@ export async function deleteIdea(projectId: string) {
       }
     }
 
+    // --- PERBAIKAN: Tambahkan logika untuk menghapus database_schema ---
+    const { error: schemaError } = await supabase
+      .from("database_schemas")
+      .delete()
+      .match({ project_id: projectId });
+
+    // Kode 'PGRST116' berarti tidak ada baris yang cocok, yang tidak apa-apa.
+    if (schemaError && schemaError.code !== "PGRST116") {
+      throw new Error(
+        `Failed to delete database schema: ${schemaError.message}`
+      );
+    }
+
     const { error: projectError } = await supabase
       .from("projects")
       .delete()

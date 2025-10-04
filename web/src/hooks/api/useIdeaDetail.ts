@@ -39,11 +39,14 @@ export const useIdea = (id: string) => {
         console.warn("Could not find workbench content for project:", id);
       }
 
-      // --- TAMBAHAN: Cek keberadaan schema ---
-      const { data: schemaData, error: schemaError } = await supabase
+      const { count: schemaCount, error: schemaError } = await supabase
         .from("database_schemas")
-        .select("project_id", { count: "exact", head: true })
+        .select("*", { count: "exact", head: true })
         .eq("project_id", id);
+
+      if (schemaError) {
+        console.error("Error checking for schema:", schemaError.message);
+      }
 
       const formattedData: IdeaDetail = {
         id: projectData.id,
@@ -64,7 +67,7 @@ export const useIdea = (id: string) => {
         workbenchContent: workbenchData
           ? (workbenchData.content as { markdown: string })
           : null,
-        hasSchema: (schemaData?.length ?? 0) > 0,
+        hasSchema: (schemaCount ?? 0) > 0,
       };
 
       setIdea(formattedData);

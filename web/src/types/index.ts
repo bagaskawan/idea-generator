@@ -15,6 +15,7 @@ export interface ProjectData {
   repo_url?: string;
   live_url?: string;
   created_at: Date;
+  workbenchContent?: { markdown: string } | null;
 }
 
 // Definisikan tipe untuk konten workbench

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import ReactFlow, {
   Controls,
   Background,
@@ -15,7 +16,14 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { toast } from "sonner";
 import { Button } from "@/components/shared/ui/button";
-import { Bot, Loader2, Workflow, FileCode, Copy } from "lucide-react";
+import {
+  ArrowLeft,
+  Bot,
+  Loader2,
+  Workflow,
+  FileCode,
+  Copy,
+} from "lucide-react";
 import TableNode from "./TableNode";
 import { FullProject, SchemaResponse, Table, Column } from "@/types";
 import { getLayoutedElements } from "@/lib/dagre-utils";
@@ -171,8 +179,10 @@ export default function SchemaView({
     setSqlCode(sql); // <-- Set state SQL untuk membuka modal
   };
 
+  const problemStatement = project.problem_statement || "";
+  const workbenchContent = project.workbenchContent?.markdown || "";
+
   const handleGenerateSchema = async () => {
-    // ... (fungsi ini tetap sama seperti sebelumnya, tidak perlu diubah)
     setIsGenerating(true);
     toast.info(
       `AI is ${
@@ -180,22 +190,34 @@ export default function SchemaView({
       } your database schema...`
     );
     try {
-      const workbenchContent = "";
       const problemStatement = project.problem_statement || "";
-      const userStoriesMatch = workbenchContent.match(
-        /### User Stories\s*([\s\S]*?)(?=\n###|$)/
-      );
-      const apiEndpointsMatch = workbenchContent.match(
-        /### API Endpoints\s*([\s\S]*?)(?=\n###|$)/
-      );
+      const workbenchContent = project.workbenchContent?.markdown || "";
+
+      const fullContext = `
+        Problem Statement:
+        ${problemStatement}
+
+        ---
+
+        Project Details (from workbench):
+        ${workbenchContent}
+      `.trim();
+
+      if (!fullContext.trim()) {
+        toast.error("Project context is missing", {
+          description:
+            "Please add a problem statement or content to your project's workbench.",
+        });
+        setIsGenerating(false);
+        return;
+      }
+
       const res = await fetch("/api/ai/generate-database-schema", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectId: project.id,
-          projectDescription: problemStatement,
-          userStories: userStoriesMatch ? userStoriesMatch[1].trim() : "",
-          apiEndpoints: apiEndpointsMatch ? apiEndpointsMatch[1].trim() : "",
+          projectContext: fullContext,
         }),
       });
       if (!res.ok) {
@@ -228,36 +250,49 @@ export default function SchemaView({
         <Controls />
       </ReactFlow>
 
-      {/* --- Perbarui Tampilan Tombol --- */}
-      <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-        <Button onClick={handleGenerateSchema} disabled={isGenerating}>
-          {isGenerating ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Bot className="w-4 h-4 mr-2" />
-          )}
-          {hasSchema ? "Re-generate Schema" : "Generate Schema with AI"}
-        </Button>
-
-        {hasSchema && (
-          <Button
-            variant="outline"
-            onClick={handleExportToSql}
-            disabled={isGenerating}
-          >
-            <FileCode className="w-4 h-4 mr-2" />
-            Export to SQL
+      <div className="absolute top-4 left-0 right-0 z-10 flex items-center justify-between px-4">
+        {/* Left side */}
+        <Link href={`/idea/${project.id}`}>
+          <Button variant="ghost">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Canvas Idea
           </Button>
-        )}
+        </Link>
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          <Button onClick={handleGenerateSchema} disabled={isGenerating}>
+            {isGenerating ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Bot className="w-4 h-4 mr-2" />
+            )}
+            {hasSchema ? "Re-generate Schema" : "Generate Schema with AI"}
+          </Button>
+
+          {hasSchema && (
+            <Button
+              variant="outline"
+              onClick={handleExportToSql}
+              disabled={isGenerating}
+            >
+              <FileCode className="w-4 h-4 mr-2" />
+              Export to SQL
+            </Button>
+          )}
+        </div>
       </div>
 
       {!hasSchema && !isGenerating && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center bg-background/80 p-8 rounded-lg shadow-lg backdrop-blur-sm">
-          {/* ... (konten ini tetap sama) ... */}
+          <Workflow className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+          <h2 className="text-xl font-bold mb-2">Database Schema Visualizer</h2>
+          <p className="text-muted-foreground mb-6 max-w-sm">
+            Click the generate button to get started. The AI will analyze your
+            project and create a relational database schema for you.
+          </p>
         </div>
       )}
 
-      {/* --- Tambahkan Komponen Modal Dialog --- */}
       <Dialog
         open={!!sqlCode}
         onOpenChange={(isOpen) => !isOpen && setSqlCode(null)}

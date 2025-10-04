@@ -219,7 +219,7 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   return (
     <>
       <div className="max-w-screen-2xl h-full mx-auto px-4 sm:px-6 lg:px-6">
-        <IdeaDetailHeader isSaving={isSaving} />
+        <IdeaDetailHeader id={id} isSaving={isSaving} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12 mt-8">
           <div className="lg:col-span-2">
@@ -234,78 +234,9 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
                 <ProjectInfoSidebar project={idea} onUpdate={refreshIdea} />
               </div>
             </ScrollArea>
-            <div className="mt-auto p-2 border-t border-border/50 flex-shrink-0 text-center">
-              {/* --- PERBAIKAN: Tombol kondisional --- */}
-              {hasSchema ? (
-                <Link href={`/idea/${id}/schema`} passHref legacyBehavior>
-                  <Button className="w-full p-6 mt-8">
-                    <Workflow className="w-4 h-4 mr-2" />
-                    View Database Schema
-                  </Button>
-                </Link>
-              ) : (
-                <GenerateSchemaButton
-                  onClick={handleGenerateSchema}
-                  isLoading={isGeneratingSchema}
-                />
-              )}
-              <Button
-                variant="outline"
-                className="w-full p-6 mt-8 border-red-500 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                onClick={() => setIsDeleteDialogOpen(true)}
-                disabled={isDeleting}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Idea
-              </Button>
-            </div>
           </div>
         </div>
       </div>
-
-      <AlertDialog
-        open={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Delete this entire project permanently?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              workspace. Please type the name of the workspace to confirm.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <div className="my-2 space-y-2">
-            <Input
-              value={deleteConfirmationInput}
-              onChange={(e) => {
-                setDeleteConfirmationInput(e.target.value);
-                if (deleteError) setDeleteError(null);
-              }}
-              placeholder={`${idea.title}`}
-              className="my-2"
-              autoFocus
-            />
-            {deleteError && (
-              <p className="text-sm text-red-600">{deleteError}</p>
-            )}
-          </div>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Yes, delete this project"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
