@@ -68,7 +68,7 @@ export default function Header() {
             height={32}
           />
           <div className="flex-1 flex justify-center items-center gap-4">
-            <SearchBar />
+            {/* <SearchBar /> */}
             <ButtonGenerateIdea />
           </div>
           <div className="flex items-center space-x-6">

@@ -174,7 +174,7 @@ export default function IdeaDetailHeader({
               <span className="sr-only">Settings</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="text-left">
+          <DropdownMenuContent align="end" className="text-center">
             {/* PERBAIKAN: Hapus padding dan cegah dropdown tertutup saat diklik */}
             <DropdownMenuItem
               onSelect={(e) => e.preventDefault()}
@@ -183,7 +183,7 @@ export default function IdeaDetailHeader({
               {hasSchema ? (
                 <Link
                   href={`/idea/${id}/schema`}
-                  className="flex items-center w-full px-3 py-2 text-sm"
+                  className="flex items-center justify-center w-full px-3 py-2 text-sm"
                 >
                   View Database Schema
                 </Link>
@@ -191,7 +191,7 @@ export default function IdeaDetailHeader({
                 // PERBAIKAN: Gunakan Button biasa dengan justify-start
                 <Button
                   variant="ghost"
-                  className="w-full justify-start px-3 py-2 text-sm"
+                  className="w-full justify-center px-3 py-2 text-sm"
                   onClick={handleGenerateSchema}
                   disabled={isGeneratingSchema}
                 >
@@ -199,16 +199,12 @@ export default function IdeaDetailHeader({
                 </Button>
               )}
             </DropdownMenuItem>
-            <DropdownMenuItem className="p-2" disabled={isDeleting}>
-              <Button
-                variant="ghost"
-                className="w-full justify-start px-3 py-2 text-sm"
-                onClick={() => setIsDeleteDialogOpen(true)}
-                disabled={isDeleting}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete Idea
-              </Button>
+            <DropdownMenuItem
+              onSelect={() => setIsDeleteDialogOpen(true)}
+              className="p-4 text-sm text-destructive hover:bg-destructive/20 hover:text-destructive focus:bg-destructive/20 focus:text-destructive-foreground cursor-pointer justify-center"
+              disabled={isDeleting}
+            >
+              <span className="text-center">Delete Idea</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

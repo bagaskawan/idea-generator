@@ -172,3 +172,27 @@
 .focus-visible\:border-ring:focus-visible {
   border-color: none;
 }
+
+/* highlight blocknote selected block */
+.bn-block.selected {
+  background: rgba(56, 132, 255, 0.25) !important; /* warna ala notion */
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.bn-editor .bn-block.selected {
+  background: rgba(45, 113, 252, 0.3) !important;
+  border-radius: 6px;
+}
+
+/* case 2 (mantine layer host) */
+.bn-container .bn-block.selected {
+  background: rgba(45, 113, 252, 0.3) !important;
+  border-radius: 6px;
+}
+
+/* case 3 (internal block wrapper) */
+.bn-block-content:has(.bn-block.selected) {
+  background: rgba(45, 113, 252, 0.3) !important;
+  border-radius: 6px;
+}

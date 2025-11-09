@@ -3,35 +3,24 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ScrollArea } from "@/components/shared/ui/scroll-area";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Skeleton } from "@/components/shared/ui/skeleton";
 import { Button } from "@/components/shared/ui/button";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/shared/ui/alert-dialog";
-import { Input } from "@/components/shared/ui/input";
-import { Database, Trash2, Workflow } from "lucide-react";
+import { Block } from "@blocknote/core";
 
 // Custom hooks
 import { useIdea } from "@/hooks/api/useIdeaDetail";
 import { useRealtimeUpdates } from "@/hooks/features/useRealtimeUpdates";
 import { useAutoSave } from "@/hooks/features/useAutoSave";
 import { useBlocknoteEditor } from "@/hooks/util/useBlocknoteEditor";
+import { HeadingItem } from "@/types";
 
 // Components
 import IdeaDetailHeader from "@/components/modules/idea-detail/IdeaDetailHeader";
 import IdeaEditor from "@/components/modules/idea-detail/IdeaEditor";
 import ProjectInfoSidebar from "@/components/modules/idea-detail/ProjectInfoSidebar";
-import { LoadingState } from "@/components/modules/idea-generate/LoadingState"; // Import LoadingState
-import { GenerateSchemaButton } from "@/components/modules/idea-detail/GenerateSchemaButton";
+import { LoadingState } from "@/components/modules/idea-generate/LoadingState";
+import { TableOfContents } from "@/components/modules/idea-detail/TableofContents/TableOfContents";
 
 // BlockNote Styles
 import "@blocknote/mantine/style.css";
@@ -39,10 +28,17 @@ import "@blocknote/react/style.css";
 import "@blocknote/xl-ai/style.css";
 
 import { deleteIdea } from "@/lib/actions/idea-actions";
+import { FloatingTableOfContents } from "@/components/modules/idea-detail/TableofContents/FloatingTableOfContents";
 
 type IdeaDetailViewProps = {
   id: string;
 };
+
+function getBlockText(block: Block): string {
+  return block.content
+    .map((inline) => (inline.type === "text" ? inline.text : ""))
+    .join("");
+}
 
 export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const router = useRouter();
@@ -51,7 +47,6 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const isRealtimeUpdate = useRef(false);
   const { isSaving } = useAutoSave(editor, id, isRealtimeUpdate);
 
-  // --- PERBAIKAN: State untuk mengelola proses generate schema ---
   const [isGeneratingSchema, setIsGeneratingSchema] = useState(false);
   const [hasSchema, setHasSchema] = useState(false);
 
@@ -61,9 +56,14 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const [headings, setHeadings] = useState<HeadingItem[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [isManualSelect, setIsManualSelect] = useState(false);
+  const isManualSelectRef = useRef<boolean>(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   useRealtimeUpdates(id, editor, isRealtimeUpdate);
 
-  // --- PERBAIKAN: Cek apakah schema sudah ada saat data 'idea' dimuat ---
   useEffect(() => {
     if (idea?.hasSchema) {
       setHasSchema(true);
@@ -98,6 +98,89 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
     };
     syncEditorContent();
   }, [editor, idea]);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const updateHeadings = () => {
+      const newHeadings: HeadingItem[] = [];
+      for (const block of editor.topLevelBlocks) {
+        if (block.type === "heading") {
+          newHeadings.push({
+            id: block.id,
+            text: getBlockText(block),
+            level: block.props.level,
+          });
+        }
+      }
+      setHeadings(newHeadings);
+    };
+
+    updateHeadings();
+
+    const unsubscribe = editor.onEditorContentChange(updateHeadings);
+
+    return () => {
+      // Pengecekan defensif: hanya panggil jika unsubscribe adalah fungsi
+      if (typeof unsubscribe === "function") {
+        unsubscribe();
+      }
+    };
+  }, [editor, idea]);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    if (!editor) return;
+
+    const handleScroll = () => {
+      if (isManualSelectRef.current) return;
+      if (isManualSelect) return;
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const progress =
+        container.scrollTop / (container.scrollHeight - container.clientHeight);
+
+      const nearTop = progress < 0.25;
+      const nearBottom = progress > 0.95;
+
+      if (nearBottom) {
+        setActiveId(headings[headings.length - 1]?.id || null);
+        return;
+      }
+
+      const containerRect = container.getBoundingClientRect();
+      let currentActiveId: string | null = null;
+      let smallestDistance = Infinity;
+
+      const reference = nearTop
+        ? containerRect.top
+        : containerRect.top + containerRect.height / 2;
+
+      for (const heading of headings) {
+        const el = container.querySelector(
+          `[data-id="${heading.id}"]`
+        ) as HTMLElement;
+        if (!el) continue;
+
+        const elRect = el.getBoundingClientRect();
+        const distance = Math.abs(elRect.top - reference);
+
+        if (distance < smallestDistance) {
+          smallestDistance = distance;
+          currentActiveId = heading.id;
+        }
+      }
+
+      setActiveId(currentActiveId);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    handleScroll();
+
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, [headings]);
 
   const handleGenerateSchema = async () => {
     if (!idea) return;
@@ -165,6 +248,44 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
     });
   };
 
+  const handleHeadingClick = (blockId: string) => {
+    const container = scrollContainerRef.current;
+    if (!container || !editor) return;
+
+    // stop scroll spy sementara
+    isManualSelectRef.current = true;
+    setIsManualSelect(true);
+    setActiveId(blockId);
+
+    // scroll dulu ke block
+    const blockElement = container.querySelector(
+      `[data-id="${blockId}"]`
+    ) as HTMLElement | null;
+
+    if (blockElement) {
+      blockElement.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+
+    queueMicrotask(() => {
+      try {
+        if (typeof editor.setSelectedBlocks === "function") {
+          editor.setSelectedBlocks([blockId]);
+        }
+      } catch (e) {
+        console.error("setSelectedBlocks error:", e);
+      }
+    });
+
+    // balikin scroll spy setelah delay
+    setTimeout(() => {
+      isManualSelectRef.current = false;
+      setIsManualSelect(false);
+    }, 700);
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -221,14 +342,24 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
       <div className="max-w-screen-2xl h-full mx-auto px-4 sm:px-6 lg:px-6">
         <IdeaDetailHeader id={id} isSaving={isSaving} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 lg:gap-12 mt-8">
-          <div className="lg:col-span-2">
-            <ScrollArea className="h-[calc(100vh-200px)] pr-4">
-              {editor && <IdeaEditor editor={editor} />}
-            </ScrollArea>
+        <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-8 mt-8 ">
+          <aside className="hidden lg:block lg:col-span-1 mt-8 lg:mt-0">
+            <div className="sticky top-24 z-10">
+              <FloatingTableOfContents
+                headings={headings}
+                onHeadingClick={handleHeadingClick}
+                activeId={activeId}
+              />
+            </div>
+          </aside>
+          <div
+            ref={scrollContainerRef}
+            className="lg:col-span-7 h-[calc(100vh-150px)] overflow-y-auto pr-4"
+          >
+            {editor && <IdeaEditor editor={editor} />}
           </div>
 
-          <div className="lg:col-span-1 mt-8 lg:mt-0">
+          <div className="lg:col-span-4 mt-8 lg:mt-0">
             <ScrollArea className="h-[calc(100vh-200px)] pr-4">
               <div className="mb-8">
                 <ProjectInfoSidebar project={idea} onUpdate={refreshIdea} />

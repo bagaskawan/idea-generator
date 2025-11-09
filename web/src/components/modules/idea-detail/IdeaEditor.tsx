@@ -39,7 +39,7 @@ export default function IdeaEditor({
   }
 
   return (
-    <div className="w-full p-4 mb-4 font-barlow">
+    <div className="w-full p-4 mb-4 font-barlow prose prose-stone dark:prose-invert min-w-full max-w-full flex-1">
       <BlockNoteView
         editor={editor}
         formattingToolbar={false}

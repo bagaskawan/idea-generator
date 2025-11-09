@@ -12,7 +12,8 @@ type SchemaPageProps = {
 // Halaman ini mengambil data awal di server
 export default async function SchemaPage({ params }: SchemaPageProps) {
   const supabase = await createClient();
-  const { id } = params;
+  const { id } = await params;
+  console.log(id);
 
   const { data: project, error: projectError } = await supabase
     .from("projects")

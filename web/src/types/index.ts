@@ -117,3 +117,9 @@ export interface InterviewSessionState {
   ideaOptions: IdeaOption[];
   generatedBlueprint: GeneratedBlueprint | null;
 }
+
+export interface HeadingItem {
+  id: string;
+  text: string;
+  level: 1 | 2 | 3 | 4 | 5 | 6;
+}
