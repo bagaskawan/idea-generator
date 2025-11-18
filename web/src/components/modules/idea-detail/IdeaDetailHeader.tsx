@@ -1,5 +1,13 @@
 import { Button } from "@/components/shared/ui/button";
-import { ArrowLeft, Ellipsis, Eye, Trash2, Workflow } from "lucide-react";
+import {
+  ArrowLeft,
+  Ellipsis,
+  Database,
+  Trash2,
+  Files,
+  FilesIcon,
+  File,
+} from "lucide-react";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -169,42 +177,42 @@ export default function IdeaDetailHeader({
         {/* Settings Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" className="flex items-center">
               <Ellipsis className="w-4 h-4" />
               <span className="sr-only">Settings</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="text-center">
-            {/* PERBAIKAN: Hapus padding dan cegah dropdown tertutup saat diklik */}
+
+          <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onSelect={(e) => e.preventDefault()}
-              className="p-2"
+              onSelect={() => {
+                if (hasSchema) {
+                  router.push(`/idea/${id}/schema`);
+                } else {
+                  handleGenerateSchema();
+                }
+              }}
             >
-              {hasSchema ? (
-                <Link
-                  href={`/idea/${id}/schema`}
-                  className="flex items-center justify-center w-full px-3 py-2 text-sm"
-                >
-                  View Database Schema
-                </Link>
-              ) : (
-                // PERBAIKAN: Gunakan Button biasa dengan justify-start
-                <Button
-                  variant="ghost"
-                  className="w-full justify-center px-3 py-2 text-sm"
-                  onClick={handleGenerateSchema}
-                  disabled={isGeneratingSchema}
-                >
-                  Generate Database Schema
-                </Button>
-              )}
+              <Database className="w-4 h-4 mr-2" />
+              <span>
+                {hasSchema
+                  ? "View Database Schema"
+                  : "Generate Database Schema"}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => router.push(`/idea/${id}/workbench`)}
+            >
+              <File className="w-4 h-4 mr-2" />
+              <span>Export to PDF</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => setIsDeleteDialogOpen(true)}
-              className="p-4 text-sm text-destructive hover:bg-destructive/20 hover:text-destructive focus:bg-destructive/20 focus:text-destructive-foreground cursor-pointer justify-center"
+              variant="destructive"
               disabled={isDeleting}
             >
-              <span className="text-center">Delete Idea</span>
+              <Trash2 className="w-4 h-4 mr-2" />
+              <span>Delete Idea</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
