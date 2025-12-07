@@ -4,9 +4,7 @@ import SchemaView from "@/components/modules/idea-detail/DatabaseSchema/SchemaVi
 import { FullProject, SchemaResponse } from "@/types";
 
 type SchemaPageProps = {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 };
 
 // Halaman ini mengambil data awal di server

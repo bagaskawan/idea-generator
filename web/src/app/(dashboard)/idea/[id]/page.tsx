@@ -2,7 +2,7 @@ import IdeaDetailView from "@/components/modules/idea-detail/IdeaDetailView";
 import { FullScreenModalWrapper } from "@/components/shared/ui/FullScreenModalWrapper";
 
 type IdeaDetailPageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export default async function IdeaDetailPage({ params }: IdeaDetailPageProps) {
