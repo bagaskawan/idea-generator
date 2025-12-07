@@ -16,9 +16,14 @@ const aiExtension = createAIExtension({ model });
 /**
  * Custom hook untuk membuat dan mengonfigurasi editor BlockNote dengan fitur AI.
  */
+const dictionary = { ...en, ai: aiEn };
+
+/**
+ * Custom hook untuk membuat dan mengonfigurasi editor BlockNote dengan fitur AI.
+ */
 export function useBlocknoteEditor() {
   const editor = useCreateBlockNote({
-    dictionary: { ...en, ai: aiEn },
+    dictionary,
     extensions: [aiExtension],
   });
 

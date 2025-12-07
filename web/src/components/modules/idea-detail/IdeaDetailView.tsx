@@ -35,9 +35,12 @@ type IdeaDetailViewProps = {
 };
 
 function getBlockText(block: Block): string {
-  return block.content
-    .map((inline) => (inline.type === "text" ? inline.text : ""))
-    .join("");
+  if (Array.isArray(block.content)) {
+    return block.content
+      .map((inline) => (inline.type === "text" ? inline.text : ""))
+      .join("");
+  }
+  return "";
 }
 
 export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
@@ -118,13 +121,14 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
 
     updateHeadings();
 
-    const unsubscribe = editor.onEditorContentChange(updateHeadings);
+    editor.onEditorContentChange(updateHeadings);
 
+    // Note: onEditorContentChange does not return an unsubscribe function in this version.
+    // Since we stabilized the editor instance in useBlocknoteEditor, this hook should
+    // only run when the editor instance actually changes (which handles cleanup implicitly)
+    // or when logic dependencies change.
     return () => {
-      // Pengecekan defensif: hanya panggil jika unsubscribe adalah fungsi
-      if (typeof unsubscribe === "function") {
-        unsubscribe();
-      }
+      // No explicit unsubscribe available/needed for this version
     };
   }, [editor, idea]);
 

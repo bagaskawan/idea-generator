@@ -94,16 +94,16 @@ export const useAutoSave = (
         }, 1500);
       };
 
-      // onEditorContentChange mengembalikan fungsi unsubscribe
-      const unsubscribe = editor.onEditorContentChange(handleContentChange);
+      // onEditorContentChange void return
+      editor.onEditorContentChange(handleContentChange);
       isInitialized.current = true;
 
-      // useEffect cleanup function harus me-return fungsi unsubscribe itu sendiri
+      // useEffect cleanup function
       return () => {
         if (debounceTimer.current) {
           clearTimeout(debounceTimer.current);
         }
-        unsubscribe(); // Panggil fungsi unsubscribe di sini
+        // No unsubscribe available
         isInitialized.current = false;
       };
     };
