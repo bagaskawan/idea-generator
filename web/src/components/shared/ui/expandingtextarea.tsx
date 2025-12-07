@@ -6,8 +6,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { Maximize, Minimize } from "lucide-react";
 
-export interface ExpandingTextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+export type ExpandingTextareaProps = React.ComponentPropsWithoutRef<
+  typeof TextareaAutosize
+>;
 
 const ExpandingTextarea = React.forwardRef<
   HTMLTextAreaElement,
