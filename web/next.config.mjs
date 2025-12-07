@@ -10,8 +10,17 @@ const nextConfig = {
       },
     ],
   },
+  serverExternalPackages: ["@react-pdf/renderer"],
+
   experimental: {
     optimizeCss: false,
+  },
+
+  // TAMBAHAN 2: Konfigurasi Webpack untuk menangani polyfill canvas
+  webpack: (config) => {
+    config.resolve.alias.canvas = false;
+    config.resolve.alias.encoding = false;
+    return config;
   },
 };
 
