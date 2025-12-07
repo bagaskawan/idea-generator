@@ -14,7 +14,6 @@ const nextConfig = {
 
   experimental: {
     optimizeCss: false,
-    esmExternals: "loose",
   },
 
   webpack: (config) => {

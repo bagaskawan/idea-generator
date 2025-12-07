@@ -6,7 +6,7 @@ import IdeaList from "@/components/IdeaList";
 import IdeaDetailModal from "@/components/IdeaDetailModal";
 import DevelopIdeaModal from "@/components/DevelopIdeaModal";
 import { useIdeaManager } from "@/hooks/features/useIdeaManager";
-import { DataItem } from "@/types";
+import { ProjectData } from "@/types";
 
 export default function Home() {
   const {
@@ -27,7 +27,7 @@ export default function Home() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isDevelopModalOpen, setIsDevelopModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<DataItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<ProjectData | null>(null);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -50,12 +50,12 @@ export default function Home() {
     setErrors({});
   };
 
-  const showDetails = (item: DataItem) => {
+  const showDetails = (item: ProjectData) => {
     setSelectedItem(item);
     setIsDetailModalOpen(true);
   };
 
-  const handleDevelopIdea = (item: DataItem) => {
+  const handleDevelopIdea = (item: ProjectData) => {
     setSelectedItem(item);
     setIsDevelopModalOpen(true);
     developIdea(item);
