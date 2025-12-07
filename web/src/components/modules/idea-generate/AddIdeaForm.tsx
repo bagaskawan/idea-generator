@@ -8,7 +8,7 @@ import { Input } from "@/components/shared/ui/input";
 import { Textarea } from "@/components/shared/ui/textarea";
 import { Loader2, Plus, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { addIdea } from "@/lib/actions/idea-actions";
+import { createManualIdea } from "@/lib/actions/idea-actions";
 import { toast } from "sonner";
 
 export default function AddIdeaForm() {
@@ -28,7 +28,7 @@ export default function AddIdeaForm() {
     }
 
     startTransition(async () => {
-      const result = await addIdea(formData);
+      const result = await createManualIdea(formData);
       if (result.success) {
         toast.success("Idea added successfully!", {
           description: "Your new idea has been saved to your collection.",

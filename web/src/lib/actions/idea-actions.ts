@@ -72,8 +72,8 @@ export async function addIdea(blueprint: GeneratedBlueprint) {
   return { success: true, error: null, projectId: newProjectId };
 }
 
-// Fungsi untuk mengenerate ide dengan AI
-export async function generateIdea(formData: FormData) {
+// Fungsi untuk membuat ide secara manual (tanpa AI)
+export async function createManualIdea(formData: FormData) {
   const cookieStore = cookies();
   const supabase = await createClient();
 
