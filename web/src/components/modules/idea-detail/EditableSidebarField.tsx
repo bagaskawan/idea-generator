@@ -66,7 +66,6 @@ export default function EditableSidebarField({
     setIsEditing(false);
   };
 
-  // --- Logika khusus untuk mode edit "list" ---
   const handleItemChange = (index: number, text: string) => {
     const newItems = [...(value as ListItem[])];
     if (isObjectList) {
@@ -85,9 +84,7 @@ export default function EditableSidebarField({
   const handleRemoveItem = (index: number) => {
     setValue((value as ListItem[]).filter((_, i) => i !== index));
   };
-  // --- Akhir dari logika "list" ---
 
-  // Tampilan saat tidak dalam mode edit
   if (!isEditing) {
     const hasValue = Array.isArray(initialValue)
       ? initialValue.length > 0
@@ -119,7 +116,9 @@ export default function EditableSidebarField({
           </ul>
         ) : (
           <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
-            {initialValue}
+            {typeof initialValue === "string"
+              ? initialValue
+              : JSON.stringify(initialValue)}
           </div>
         )}
         <Button
