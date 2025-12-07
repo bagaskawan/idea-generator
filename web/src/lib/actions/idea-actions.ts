@@ -93,6 +93,7 @@ export async function createManualIdea(formData: FormData) {
     user_id: user.id,
     title: title,
     description: description,
+    problem_statement: description,
     tags: tags,
     is_starred: false,
     last_activity: new Date().toISOString(),
