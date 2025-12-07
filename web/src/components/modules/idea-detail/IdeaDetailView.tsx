@@ -275,8 +275,9 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
 
     queueMicrotask(() => {
       try {
-        if (typeof editor.setSelectedBlocks === "function") {
-          editor.setSelectedBlocks([blockId]);
+        if (editor) {
+          editor.setTextCursorPosition(blockId);
+          editor.focus();
         }
       } catch (e) {
         console.error("setSelectedBlocks error:", e);
