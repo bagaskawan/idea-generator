@@ -160,7 +160,7 @@ export default function IdeaDetailHeader({
         <Link href="/dashboard" passHref>
           <Button variant="ghost" className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
-            <span>Kembali ke Proyek</span>
+            <span>Kembali ke List Proyek</span>
           </Button>
         </Link>
         {/* Center */}
