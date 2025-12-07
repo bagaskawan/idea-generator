@@ -45,6 +45,7 @@ const iconMap: Record<IconName, React.ElementType> = {
   "trending-up": TrendingUp,
   "check-circle": CheckCircle,
   "help-circle": HelpCircle,
+  briefcase: Briefcase,
 };
 
 /**
