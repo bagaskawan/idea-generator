@@ -1,5 +1,10 @@
 // src/components/ai/AIMenuButton.tsx
 
+interface AIAction {
+  label: string;
+  requestType: string;
+}
+
 const contextualActions: Record<string, AIAction[]> = {
   "user stories": [
     { label: "Buatkan Acceptance Criteria", requestType: "GENERATE_AC" },
