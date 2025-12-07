@@ -67,7 +67,6 @@ function AIInterviewDisplayContent() {
           isSaving={isSaving}
         />
       ) : (
-        // Fallback jika blueprint tidak ada tapi step adalah result
         <LoadingState title="Loading blueprint..." texts={[]} />
       );
     case "initial":

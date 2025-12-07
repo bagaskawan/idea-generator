@@ -40,7 +40,7 @@ export const InterviewingStep = ({
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] px-4 animate-in fade-in-50 text-center pb-24">
-      <div className="max-w-4xl w-full mx-auto bg-card rounded-2xl p-8 border">
+      <div className="max-w-4xl w-full mx-auto bg-card rounded-2xl p-8 ">
         <div className="flex justify-between items-start mb-10">
           <h2 className="text-3xl font-bold text-gray-900 tracking-tight dark:text-gray-100"></h2>
           <span className="text-sm font-medium text-gray-500 dark:text-gray-400">

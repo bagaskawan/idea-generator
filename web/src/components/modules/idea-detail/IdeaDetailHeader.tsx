@@ -1,13 +1,5 @@
 import { Button } from "@/components/shared/ui/button";
-import {
-  ArrowLeft,
-  Ellipsis,
-  Database,
-  Trash2,
-  Files,
-  FilesIcon,
-  File,
-} from "lucide-react";
+import { ArrowLeft, Ellipsis, Database, Trash2, File } from "lucide-react";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -15,7 +7,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/shared/ui/dropdown-menu";
-import { GenerateSchemaButton } from "@/components/modules/idea-detail/GenerateSchemaButton";
 import { useEffect, useState, useTransition } from "react";
 import { useIdea } from "@/hooks/api/useIdeaDetail";
 import { toast } from "sonner";
@@ -33,6 +24,7 @@ import {
 } from "@/components/shared/ui/alert-dialog";
 import { Input } from "@/components/shared/ui/input";
 import { LoadingState } from "@/components/modules/idea-generate/LoadingState";
+import { PdfPreviewDialog } from "@/components/modules/idea-detail/Export/PdfPreviewDialog";
 
 interface IdeaDetailHeaderProps {
   id: string;
@@ -54,6 +46,9 @@ export default function IdeaDetailHeader({
   // --- PERBAIKAN: State untuk mengelola proses generate schema ---
   const [isGeneratingSchema, setIsGeneratingSchema] = useState(false);
   const [hasSchema, setHasSchema] = useState(false);
+
+  // PDF Preview State
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (idea?.hasSchema) {
@@ -201,7 +196,10 @@ export default function IdeaDetailHeader({
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              onSelect={() => router.push(`/idea/${id}/workbench`)}
+              onSelect={(e) => {
+                e.preventDefault();
+                setIsPreviewOpen(true);
+              }}
             >
               <File className="w-4 h-4 mr-2" />
               <span>Export to PDF</span>
@@ -217,6 +215,15 @@ export default function IdeaDetailHeader({
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
+
+      {idea && (
+        <PdfPreviewDialog
+          open={isPreviewOpen}
+          onOpenChange={setIsPreviewOpen}
+          idea={idea}
+        />
+      )}
+
       <AlertDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}

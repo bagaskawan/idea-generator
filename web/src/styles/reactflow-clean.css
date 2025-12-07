@@ -1,0 +1,6 @@
+/* Override warna grid atau warna internal yang mungkin memakai lab() */
+
+.react-flow__background {
+  --color: #9ca3af !important;
+  background-color: #ffffff !important;
+}

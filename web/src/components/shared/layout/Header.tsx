@@ -69,7 +69,7 @@ export default function Header() {
           />
           <div className="flex-1 flex justify-center items-center gap-4">
             {/* <SearchBar /> */}
-            <ButtonGenerateIdea />
+            {/* <ButtonGenerateIdea /> */}
           </div>
           <div className="flex items-center space-x-6">
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
