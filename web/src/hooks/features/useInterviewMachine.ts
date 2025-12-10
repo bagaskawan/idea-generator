@@ -4,6 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { addIdea } from "@/lib/actions/idea-actions";
 import { toast } from "sonner";
+import { api } from "@/lib/api-client";
 import {
   ConversationTurn,
   IdeaOption,
@@ -79,13 +80,7 @@ export const useInterviewMachine = () => {
     updateState("generating", { interest: interestValue });
 
     try {
-      const response = await fetch("/api/ai/start-interview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interest: interestValue }),
-      });
-      if (!response.ok) throw new Error("Failed to start interview.");
-      const data = await response.json();
+      const data = await api.startInterview(interestValue);
       updateState("interviewing", {
         interest: interestValue,
         currentQuestion: data.question,
@@ -111,16 +106,10 @@ export const useInterviewMachine = () => {
     if (newHistory.length >= 3) {
       updateState("generating", { conversationHistory: newHistory });
       try {
-        const res = await fetch("/api/ai/generate-idea-options", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            interest: sessionState.interest,
-            conversation: newHistory,
-          }),
+        const data = await api.generateIdeas({
+          interest: sessionState.interest,
+          conversation: newHistory,
         });
-        if (!res.ok) throw new Error("Failed to get idea options.");
-        const data = await res.json();
         updateState("showOptions", {
           ideaOptions: data.ideas,
           conversationHistory: newHistory,
@@ -133,16 +122,10 @@ export const useInterviewMachine = () => {
       }
     } else {
       try {
-        const res = await fetch("/api/ai/continue-interview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            interest: sessionState.interest,
-            history: newHistory,
-          }),
-        });
-        if (!res.ok) throw new Error("Failed to get next question.");
-        const data = await res.json();
+        const data = await api.continueInterview(
+          sessionState.interest,
+          newHistory
+        );
         updateState("interviewing", {
           conversationHistory: newHistory,
           currentQuestion: data.question,
@@ -158,17 +141,11 @@ export const useInterviewMachine = () => {
     setIsLoading(true);
     updateState("generating", {});
     try {
-      const res = await fetch("/api/ai/generate-idea", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...selectedIdea,
-          interest: sessionState.interest,
-          conversation: sessionState.conversationHistory,
-        }),
+      const blueprint: GeneratedBlueprint = await api.generateBlueprint({
+        ...selectedIdea,
+        interest: sessionState.interest,
+        conversation: sessionState.conversationHistory,
       });
-      if (!res.ok) throw new Error("Failed to generate blueprint.");
-      const blueprint: GeneratedBlueprint = await res.json();
       updateState("result", { generatedBlueprint: blueprint });
     } catch (err: any) {
       toast.error("Error", { description: err.message });
