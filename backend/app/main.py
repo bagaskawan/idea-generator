@@ -7,14 +7,15 @@ app = FastAPI()
 # Setup CORS
 
 origins = [
-   "http://localhost:3000","https://idea-generator-puce.vercel.app",
+   "http://localhost:3000",
+   "https://idea-generator-puce.vercel.app",
    "https://idea-generator-bagaskawan.vercel.app",
    "https://idea-generator-production-4c2e.up.railway.app"
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -9,6 +9,10 @@ export async function fetchFromBackend(
     "Content-Type": "application/json",
   };
 
+  // DEBUG: Cek URL yang terbentuk di Console Browser
+  const fullUrl = `${BACKEND_URL}${endpoint}`;
+  console.log(`[API Call] Fetching: ${fullUrl} (${method})`);
+
   const response = await fetch(`${BACKEND_URL}${endpoint}`, {
     method,
     headers,
