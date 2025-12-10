@@ -13,6 +13,8 @@ origins = [
    "https://idea-generator-production-4c2e.up.railway.app"
 ]
 
+print(f"Debug: CORS Origins: {origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins, 
