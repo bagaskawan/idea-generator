@@ -9,7 +9,6 @@ app = FastAPI()
 # Domains statis (localhost, domain Railway)
 origins = [
    "http://localhost:3000",
-   "https://idea-generator-puce.vercel.app"
    "https://idea-generator-production-4c2e.up.railway.app"
 ]
 
