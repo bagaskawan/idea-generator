@@ -1,6 +1,7 @@
 import os
 import json
-import google.generativeai as genai
+# import google.generativeai as genai
+from groq import Groq
 from fastapi import APIRouter, HTTPException
 from ..models import IdeaRequest, IdeaResponse, GenerateBlueprintRequest, BlueprintResponse, GenerateDatabaseSchemaRequest
 from dotenv import load_dotenv
@@ -10,17 +11,16 @@ load_dotenv()
 
 router = APIRouter()
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+model_llm = "llama-3.3-70b-versatile"
 
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
-model_flash = genai.GenerativeModel("gemini-2.5-flash")
-# Use a more capable model for blueprint if possible, but flash is good for speed/cost. 
-# The original code used gemini-2.5-flash which might be a typo or a specific preview model. 
-# I will use gemini-1.5-flash for consistency or update if needed.
-# Converting strictly from existing code.
+def clean_json_string(text: str):
+    return text.replace("```json", "").replace("```", "").strip()
 
 @router.post("/generate-list")
 async def generate_ideas_list(request: IdeaRequest):
@@ -51,10 +51,33 @@ async def generate_ideas_list(request: IdeaRequest):
         ]
         """
 
-        response = model_flash.generate_content(prompt)
-        cleaned_text = response.text.replace("```json", "").replace("```", "").strip()
-        data = json.loads(cleaned_text)
-        return {"ideas": data}
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            model=model_llm,
+            temperature=0.7,
+            response_format={"type": "json_object"}
+        )
+        response_text = chat_completion.choices[0].message.content
+        data = json.loads(response_text)
+        
+        if isinstance(data, list):
+             return {"ideas": data}
+             
+        if isinstance(data, dict):
+            if "ideas" in data:
+                return data
+            
+            if "projectIdeas" in data:
+                return {"ideas": data["projectIdeas"]}
+                
+            for key, value in data.items():
+                if isinstance(value, list):
+                    return {"ideas": value}
+
+        print(f"Warning: AI Output format unexpected: {data}")
+        return {"ideas": []}
 
     except Exception as e:
         print(f"Error in generate-list: {e}")
@@ -63,9 +86,6 @@ async def generate_ideas_list(request: IdeaRequest):
 @router.post("/generate-blueprint")
 async def generate_blueprint(request: GenerateBlueprintRequest):
     try:
-        # Using a slightly stronger model prompt logic if needed
-        # Original code used "gemini-2.5-flash" - I will stick to what's available or configured.
-        
         prompt = f"""
           You are "Architech", a world-class CTO and Digital Product Architect.
           Your mission is to expand a chosen project idea into a complete, professional, and actionable project blueprint. You will be given the entire context of the user's journey, from initial interest to the final selected idea.
@@ -124,9 +144,17 @@ async def generate_blueprint(request: GenerateBlueprintRequest):
           - The blueprint must be a direct, logical, and detailed expansion of the **Selected Project Idea** provided above.
         """
 
-        response = model_flash.generate_content(prompt)
-        cleaned_text = response.text.replace("```json", "").replace("```", "").strip()
-        data = json.loads(cleaned_text)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            model=model_llm,
+            temperature=0.5,
+            response_format={"type": "json_object"}
+        )
+
+        response_text = chat_completion.choices[0].message.content
+        data = json.loads(response_text)
         return data
 
     except Exception as e:
@@ -137,7 +165,7 @@ async def generate_blueprint(request: GenerateBlueprintRequest):
 @router.post("/generate-database-schema")
 async def generate_database_schema(request: GenerateDatabaseSchemaRequest):
     try:
-        model = genai.GenerativeModel("gemini-2.5-flash") 
+        model = model_llm
 
         prompt = f"""
           You are "Schema-DB", a professional Database Architect. Your mission is to design a clear, normalized, and efficient relational database schema based on a project's description, user stories, and API endpoints.
@@ -190,19 +218,23 @@ async def generate_database_schema(request: GenerateDatabaseSchemaRequest):
           }}
         """
 
-        response = model.generate_content(prompt)
-        cleaned_text = response.text.replace("```json", "").replace("```", "").strip()
-        generated_schema = json.loads(cleaned_text)
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            model=model_llm,
+            temperature=0.2, # Rendah untuk presisi teknis
+            response_format={"type": "json_object"}
+        )
+
+        response_text = chat_completion.choices[0].message.content
+        generated_schema = json.loads(response_text)
 
         # Save to Supabase
         data, count = supabase.table("database_schemas").upsert({
             "project_id": request.projectId,
             "schema_data": generated_schema,
-            # "updated_at": "now()" # Let Postgres handle default or send from here if needed, but existing code sent ISO string.
-            # I'll rely on DB defaults or add updated_at if schema requires it, matching the TS code.
-            # The TS code sent: updated_at: new Date().toISOString()
-            # Let's send it to be safe.
-             "updated_at": "now()"
+            "updated_at": "now()"
         }).execute()
         
         return generated_schema

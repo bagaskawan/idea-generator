@@ -1,6 +1,7 @@
 import os
 import json
-import google.generativeai as genai
+# import google.generativeai as genai
+from groq import Groq
 from fastapi import APIRouter, HTTPException
 from ..models import StartInterviewRequest, IdeaRequest
 from dotenv import load_dotenv
@@ -9,15 +10,14 @@ load_dotenv()
 
 router = APIRouter()
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+model_llm = "llama-3.3-70b-versatile"
 
 @router.post("/start")
 async def start_interview(request: StartInterviewRequest):
     if os.getenv("MOCK_AI_RESPONSES") == "true":
          # Return mock data if needed (Implement mock logic if required)
          pass
-
-    model = genai.GenerativeModel("gemini-2.5-flash") # Or gemini-2.0-flash if available
 
     prompt = f"""
       You are a friendly, highly experienced project consultant for software developer conducting a short but impactful interview.
@@ -49,10 +49,19 @@ async def start_interview(request: StartInterviewRequest):
     """
 
     try:
-        response = model.generate_content(prompt)
-        text = response.text
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user", 
+                    "content": prompt 
+                }
+            ],
+            model=model_llm,
+            response_format={"type": "json_object"}, 
+        )
         
-        # Clean up JSON
+        text = chat_completion.choices[0].message.content
+        
         cleaned_text = text.replace("```json", "").replace("```", "").strip()
         data = json.loads(cleaned_text)
         
@@ -64,7 +73,7 @@ async def start_interview(request: StartInterviewRequest):
 
 @router.post("/continue")
 async def continue_interview(request: IdeaRequest):
-    model = genai.GenerativeModel("gemini-2.5-flash")
+    model = model_llm
     
     prompt = f"""
       You are a friendly and insightful project consultant for software developers, conducting an interview.
@@ -99,8 +108,18 @@ async def continue_interview(request: IdeaRequest):
     """
 
     try:
-        response = model.generate_content(prompt)
-        text = response.text
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user", 
+                    "content": prompt
+                }
+            ],
+            model=model_llm,
+            response_format={"type": "json_object"},
+        )
+        
+        text = chat_completion.choices[0].message.content
         cleaned_text = text.replace("```json", "").replace("```", "").strip()
         data = json.loads(cleaned_text)
         return data
