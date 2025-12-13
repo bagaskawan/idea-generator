@@ -2,14 +2,19 @@ import os
 import json
 import google.generativeai as genai
 from fastapi import APIRouter, HTTPException
-from ..models import IdeaRequest, IdeaResponse, GenerateBlueprintRequest, BlueprintResponse
+from ..models import IdeaRequest, IdeaResponse, GenerateBlueprintRequest, BlueprintResponse, GenerateDatabaseSchemaRequest
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 load_dotenv()
 
 router = APIRouter()
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+supabase_url = os.getenv("SUPABASE_URL")
+supabase_key = os.getenv("SUPABASE_KEY")
+supabase: Client = create_client(supabase_url, supabase_key)
 
 model_flash = genai.GenerativeModel("gemini-2.5-flash")
 # Use a more capable model for blueprint if possible, but flash is good for speed/cost. 
@@ -127,4 +132,81 @@ async def generate_blueprint(request: GenerateBlueprintRequest):
     except Exception as e:
         print(f"Error in generate-blueprint: {e}")
         # Return error as standard HTTP exception
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/generate-database-schema")
+async def generate_database_schema(request: GenerateDatabaseSchemaRequest):
+    try:
+        model = genai.GenerativeModel("gemini-2.5-flash") 
+
+        prompt = f"""
+          You are "Schema-DB", a professional Database Architect. Your mission is to design a clear, normalized, and efficient relational database schema based on a project's description, user stories, and API endpoints.
+
+          ---
+          ## Full Project Context
+          {request.projectContext}
+          ---
+
+          🔹 **TASK**
+          1.  Analyze the provided context to identify the core entities (e.g., users, posts, comments, products).
+          2.  For each entity, define the necessary columns with appropriate data types (use standard SQL types like UUID, TEXT, VARCHAR, INTEGER, BOOLEAN, TIMESTAMPZ).
+          3.  Identify primary keys, foreign keys, and unique constraints to establish relationships between tables.
+          4.  The 'users' table is mandatory and should be the central point for user-related data.
+
+          🔹 **OUTPUT REQUIREMENTS**
+          - Your output MUST be a single, valid JSON object.
+          - The JSON object must have a single top-level key: "schema".
+          - The value of "schema" must be an array of table objects.
+          - Each table object must have:
+              - "table_name": (string) The name of the table (e.g., "users").
+              - "columns": (array of objects) A list of columns.
+          - Each column object must have:
+              - "name": (string) The column name (e.g., "id", "user_id").
+              - "type": (string) The SQL data type (e.g., "UUID", "TEXT").
+              - "is_primary_key": (boolean, optional) True if it's the primary key.
+              - "is_foreign_key": (boolean, optional) True if it's a foreign key.
+              - "references": (string, optional) The table and column it references (e.g., "users(id)").
+
+          Example of a perfect output structure:
+          {{
+            "schema": [
+              {{
+                "table_name": "users",
+                "columns": [
+                  {{ "name": "id", "type": "UUID", "is_primary_key": true }},
+                  {{ "name": "email", "type": "TEXT" }},
+                  {{ "name": "created_at", "type": "TIMESTAMPZ" }}
+                ]
+              }},
+              {{
+                "table_name": "posts",
+                "columns": [
+                  {{ "name": "id", "type": "UUID", "is_primary_key": true }},
+                  {{ "name": "content", "type": "TEXT" }},
+                  {{ "name": "user_id", "type": "UUID", "is_foreign_key": true, "references": "users(id)" }}
+                ]
+              }}
+            ]
+          }}
+        """
+
+        response = model.generate_content(prompt)
+        cleaned_text = response.text.replace("```json", "").replace("```", "").strip()
+        generated_schema = json.loads(cleaned_text)
+
+        # Save to Supabase
+        data, count = supabase.table("database_schemas").upsert({
+            "project_id": request.projectId,
+            "schema_data": generated_schema,
+            # "updated_at": "now()" # Let Postgres handle default or send from here if needed, but existing code sent ISO string.
+            # I'll rely on DB defaults or add updated_at if schema requires it, matching the TS code.
+            # The TS code sent: updated_at: new Date().toISOString()
+            # Let's send it to be safe.
+             "updated_at": "now()"
+        }).execute()
+        
+        return generated_schema
+
+    except Exception as e:
+        print(f"Error in generate-database-schema: {e}")
         raise HTTPException(status_code=500, detail=str(e))

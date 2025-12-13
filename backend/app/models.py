@@ -47,3 +47,7 @@ class ProjectData(BaseModel):
 class BlueprintResponse(BaseModel):
     projectData: ProjectData
     workbenchContent: str
+
+class GenerateDatabaseSchemaRequest(BaseModel):
+    projectId: str
+    projectContext: str

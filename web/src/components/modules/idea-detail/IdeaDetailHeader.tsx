@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/shared/ui/input";
 import { LoadingState } from "@/components/modules/idea-generate/LoadingState";
 import { PdfPreviewDialog } from "@/components/modules/idea-detail/Export/PdfPreviewDialog";
+import { api } from "@/lib/api-client";
 
 interface IdeaDetailHeaderProps {
   id: string;
@@ -92,21 +93,16 @@ export default function IdeaDetailHeader({
         return;
       }
 
-      const res = await fetch("/api/ai/generate-database-schema", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: idea.id,
-          projectContext: fullContext,
-        }),
+      const res = await api.generateDatabaseSchema({
+        projectId: idea.id,
+        projectContext: fullContext,
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to generate schema.");
-      }
+      // The api client already parses JSON and handles errors
+      // await res.json(); // Not needed as api client returns parsed json
 
-      await res.json();
+      // if (!res.ok) { ... } logic handled by api client
+
       toast.success("Database schema generated successfully!");
 
       // --- PERBAIKAN: Redirect ke halaman schema setelah berhasil ---

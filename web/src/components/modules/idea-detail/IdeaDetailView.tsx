@@ -28,7 +28,9 @@ import "@blocknote/react/style.css";
 import "@blocknote/xl-ai/style.css";
 
 import { deleteIdea } from "@/lib/actions/idea-actions";
+
 import { FloatingTableOfContents } from "@/components/modules/idea-detail/TableofContents/FloatingTableOfContents";
+import { api } from "@/lib/api-client";
 
 type IdeaDetailViewProps = {
   id: string;
@@ -202,23 +204,21 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
         /### API Endpoints\s*([\s\S]*?)(?=\n###|$)/
       );
 
-      const res = await fetch("/api/ai/generate-database-schema", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: idea.id,
-          projectDescription: problemStatement,
-          userStories: userStoriesMatch ? userStoriesMatch[1].trim() : "",
-          apiEndpoints: apiEndpointsMatch ? apiEndpointsMatch[1].trim() : "",
-        }),
+      const fullContext = `
+        Problem Statement:
+        ${problemStatement}
+
+        ---
+
+        Project Details (from workbench):
+        ${workbenchContent}
+      `.trim();
+
+      await api.generateDatabaseSchema({
+        projectId: idea.id,
+        projectContext: fullContext,
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to generate schema.");
-      }
-
-      await res.json();
       toast.success("Database schema generated successfully!");
 
       // --- PERBAIKAN: Redirect ke halaman schema setelah berhasil ---

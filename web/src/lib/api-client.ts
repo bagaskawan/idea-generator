@@ -44,4 +44,7 @@ export const api = {
 
   generateBlueprint: (data: any) =>
     fetchFromBackend("/api/idea/generate-blueprint", "POST", data),
+
+  generateDatabaseSchema: (data: any) =>
+    fetchFromBackend("/api/idea/generate-database-schema", "POST", data),
 };

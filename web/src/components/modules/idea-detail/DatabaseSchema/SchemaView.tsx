@@ -37,6 +37,7 @@ import {
   DialogFooter,
 } from "@/components/shared/ui/dialog";
 import { ScrollArea } from "@/components/shared/ui/scroll-area";
+import { api } from "@/lib/api-client";
 
 type SchemaViewProps = {
   project: FullProject;
@@ -212,19 +213,11 @@ export default function SchemaView({
         return;
       }
 
-      const res = await fetch("/api/ai/generate-database-schema", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: project.id,
-          projectContext: fullContext,
-        }),
+      const data: SchemaResponse = await api.generateDatabaseSchema({
+        projectId: project.id,
+        projectContext: fullContext,
       });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to generate schema.");
-      }
-      const data: SchemaResponse = await res.json();
+
       transformDataToFlow(data);
       setHasSchema(true);
       toast.success("Database schema processed successfully!");
