@@ -13,7 +13,7 @@ router = APIRouter()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 supabase_url = os.getenv("SUPABASE_URL")
-supabase_key = os.getenv("SUPABASE_KEY")
+supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
 supabase: Client = create_client(supabase_url, supabase_key)
 
 model_flash = genai.GenerativeModel("gemini-2.5-flash")
