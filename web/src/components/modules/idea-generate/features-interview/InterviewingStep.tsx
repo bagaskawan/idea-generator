@@ -21,7 +21,6 @@ export const InterviewingStep = ({
   isLoading,
 }: InterviewingStepProps) => {
   const step = sessionState.conversationHistory.length + 1;
-  const totalSteps = 3;
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in-50 duration-500">
@@ -39,9 +38,6 @@ export const InterviewingStep = ({
               </p>
             </div>
           </div>
-          <span className="text-sm text-muted-foreground">
-            {step}/{totalSteps}
-          </span>
         </div>
       </div>
 

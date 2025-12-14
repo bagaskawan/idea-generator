@@ -98,6 +98,23 @@ export interface IdeaOption {
   mvpFeatures: string[];
 }
 
+export interface ContinueInterviewResponse {
+  shouldContinue: boolean;
+  question: string;
+  reason:
+    | "sufficient_info"
+    | "need_clarification"
+    | "max_reached"
+    | "need_more_context";
+  confidence: number;
+  analysis: {
+    completeness: number;
+    clarity: number;
+    depth: number;
+    actionability: number;
+  };
+}
+
 export interface GeneratedBlueprint {
   projectData: {
     title: string;

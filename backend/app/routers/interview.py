@@ -35,6 +35,8 @@ async def start_interview(request: StartInterviewRequest):
 
       Impact: The question should spark clarity, highlight priorities, and guide the user to define the essence of their idea.
 
+      Focus: Ask about the "Why" or the "Who" first.
+
       Example 1 (User input in Indonesian):
 
       User Interest: "Aplikasi kasir untuk warung kopi"
@@ -74,38 +76,60 @@ async def start_interview(request: StartInterviewRequest):
 @router.post("/continue")
 async def continue_interview(request: IdeaRequest):
     model = model_llm
+    question_count = len(request.conversation)
     
-    prompt = f"""
-      You are a friendly and insightful project consultant for software developers, conducting an interview.
-      The user's initial interest is: "{request.interest}".
-      The conversation history so far is: {json.dumps(request.conversation, default=str)}.
+    prompt = f"""You are an expert project consultant conducting an ADAPTIVE interview to gather information for creating a software project blueprint.
 
-      Your role is to carefully analyze the entire conversation history and ask the next most logical follow-up question that drives clarity and progress.
+CONTEXT:
+- User initial interest: {request.interest}
+- Conversation history: {json.dumps(request.conversation, default=str)}
+- Current question count: {question_count}
 
-      Instructions:
+YOUR MISSION:
+Analyze the quality of the conversation so far and decide whether to CONTINUE asking questions or CONCLUDE the interview.
 
-      Language Match: Always ask the question in the same language as the user's interest and prior conversation.
+QUALITY ASSESSMENT CRITERIA:
+1. Completeness: Does the information cover key aspects (features, users, goals, constraints)?
+2. Clarity: Is the user vision clear and specific, or vague and ambiguous?
+3. Depth: Are answers detailed with insights, or surface-level and generic?
+4. Actionability: Can you create a concrete, comprehensive project blueprint from this information?
 
-      Uniqueness: Do not repeat or rephrase any previous questions. Ensure each new question adds fresh value.
+DECISION RULES:
+- MINIMUM: At least 2 questions must be asked before concluding
+- MAXIMUM: Hard limit of 10 questions total
+- CONFIDENCE THRESHOLD: If overall score is 0.75 or higher AND question count is 2 or more, you MAY conclude
+- NEED MORE: If answers are vague, contradictory, or missing critical details, CONTINUE
+- CRITICAL GAPS: If essential information is missing (target users, core features, main problem), CONTINUE
 
-      Clarity: The question must be concise, precise, and thought-provoking.
+CALCULATE:
+- overall_score = average of completeness, clarity, depth, actionability (all values between 0.0 and 1.0)
+- confidence = overall_score
 
-      Format: Output MUST be a single, valid JSON object with one key only: "question". No explanations, no markdown, no additional keys.
+DECISION LOGIC:
+- If question_count is 10 or more: set shouldContinue to false, reason is max_reached
+- Else if question_count is less than 2: set shouldContinue to true, reason is need_more_context
+- Else if overall_score is 0.75 or higher: set shouldContinue to false, reason is sufficient_info
+- Else: set shouldContinue to true, reason is need_clarification
 
-      Impact: The follow-up should encourage the user to refine their vision, uncover priorities, or make a meaningful decision.
+LANGUAGE MATCHING:
+- Detect the language from user interest and conversation
+- Use the SAME language for your question
+- Keep tone professional yet friendly
 
-      Example 1 (User input in Indonesian):
+OUTPUT FORMAT - You must return ONLY valid JSON with this exact structure:
+- shouldContinue: boolean (true or false)
+- question: string (your next question if shouldContinue is true, empty string if false)
+- reason: string (one of: sufficient_info, need_clarification, max_reached, need_more_context)
+- confidence: number (between 0.0 and 1.0)
+- analysis: object with four number properties (completeness, clarity, depth, actionability, each between 0.0 and 1.0)
 
-      User Interest: "Platform pembelajaran online untuk siswa SMA"
-
-      Output: {{ "question": "Fokus utama apa yang ingin Anda capai terlebih dahulu dengan platform ini?" }}
-
-      Example 2 (User input in English):
-
-      User Interest: "An AI-powered nutrition tracker"
-
-      Output: {{ "question": "Which specific problem do you want this nutrition tracker to solve first?" }}
-    """
+IMPORTANT:
+- If shouldContinue is true, provide a thoughtful unique question that fills the biggest gap
+- If shouldContinue is false, question must be empty string
+- Be honest in your assessment - do not artificially inflate scores
+- Consider the QUALITY of answers not just quantity
+- Return ONLY valid JSON, no markdown, no extra text
+"""
 
     try:
         chat_completion = client.chat.completions.create(
@@ -116,12 +140,24 @@ async def continue_interview(request: IdeaRequest):
                 }
             ],
             model=model_llm,
+            temperature=0.7,
             response_format={"type": "json_object"},
         )
         
         text = chat_completion.choices[0].message.content
         cleaned_text = text.replace("```json", "").replace("```", "").strip()
         data = json.loads(cleaned_text)
+        print(data)
+        
+        # Validate response structure
+        required_keys = ["shouldContinue", "question", "reason", "confidence", "analysis"]
+        if not all(key in data for key in required_keys):
+            raise ValueError(f"Missing required keys in AI response. Got: {data.keys()}")
+        
+        # Ensure proper types
+        data["shouldContinue"] = bool(data["shouldContinue"])
+        data["confidence"] = float(data["confidence"])
+        
         return data
 
     except Exception as e:

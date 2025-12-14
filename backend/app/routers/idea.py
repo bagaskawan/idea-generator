@@ -41,7 +41,7 @@ async def generate_ideas_list(request: IdeaRequest):
         OUTPUT FORMAT (JSON ARRAY):
         [
           {{
-            "projectName": "Name of the project",
+            "projectName": "Name of the project just 1 or 2 words",
             "reasonProjectName": "One sentence on why this name fits",
             "projectDescription": "A comprehensive and detailed explanation (minimum 5 sentences) describing the core value, problem solution, and user impact.",
             "uniqueSellingProposition": "The key differentiator that makes this special.",
@@ -87,87 +87,106 @@ async def generate_ideas_list(request: IdeaRequest):
 @router.post("/generate-blueprint")
 async def generate_blueprint(request: GenerateBlueprintRequest):
     try:
-        prompt = f"""
-          You are "Architech", a world-class CTO and Digital Product Architect.
-          Your mission is to expand a chosen project idea into a complete, professional, and actionable project blueprint.
-          
-          *** CRITICAL INSTRUCTION: ***
-          - You MUST be EXTREMELY VERBOSE. Do not summarize. Do not be concise.
-          - Every section must be expanded with multiple paragraphs, examples, and deep technical details.
-          - If a section usually takes 1 sentence, write 5 sentences.
+        prompt = f"""You are Architech, a world-class CTO and Digital Product Architect.
+Your mission is to expand a chosen project idea into a complete, professional, and actionable project blueprint.
 
-          ---
-          ## User's Journey Context
-          1.  **Initial Interest:** "{request.interest}"
-          2.  **Clarification Interview:** {json.dumps(request.conversation, default=str)}
-          3.  **Project Description:** "{request.projectDescription}"
+CRITICAL: Be EXTREMELY VERBOSE. Do not summarize. Every section must be expanded with multiple paragraphs and deep technical details.
 
-          ---
-          ## Selected Project Idea to Elaborate
-          You MUST build the entire blueprint based on the following chosen idea:
-          - **Project Name:** "{request.projectName}"
-          - **Unique Selling Proposition:** "{request.uniqueSellingProposition}"
-          - **Core MVP Features:** {json.dumps(request.mvpFeatures, default=str)}
-          ---
+USER CONTEXT:
+- Initial Interest: {request.interest}
+- Clarification Interview: {json.dumps(request.conversation, default=str)}
+- Project Description: {request.projectDescription}
 
-          🔹 **OUTPUT REQUIREMENTS**
+SELECTED PROJECT IDEA:
+- Project Name: {request.projectName}
+- Unique Selling Proposition: {request.uniqueSellingProposition}
+- Core MVP Features: {json.dumps(request.mvpFeatures, default=str)}
 
-          Your output MUST be a single, valid JSON object with two top-level keys: `projectData` and `workbenchContent`.
+OUTPUT REQUIREMENTS - Return a valid JSON object with exactly two keys:
 
-          1.  **projectData**: A structured metadata summary. It MUST include:
-              * **title**: (string) Use the exact Project Name from the user's selection: "{request.projectName}".
-              * **title_reason**: (string) Use the exact Title Reason from the user's selection: "{request.reasonProjectName}".
-              * **problem_statement**: (string) A concise paragraph explaining the core problem, derived from the conversation and selected idea. You can explain and elaboration from "{request.projectDescription}".
-              * **target_audience**: (array of objects) Each with "icon" and "text" fields. Generate 2-3 specific audiences. Example: [{{"icon": "student", "text": "High school students preparing for exams"}}].
-              * **success_metrics**: (array of objects) Each with "type" ("Kuantitatif" or "Kualitatif") and "text". Generate 2-3 key metrics. Example: [{{"type": "Kuantitatif", "text": "Achieve 1,000 monthly active users within 6 months"}}].
-              * **tech_stack**: (array of strings) A relevant list of technologies. Example: ["Next.js", "TypeScript", "Supabase", "Vercel"].
+1. projectData (object with these exact fields):
+   - title: string, use exactly "{request.projectName}"
+   - title_reason: string, use exactly "{request.reasonProjectName}"
+   - problem_statement: string, a concise paragraph explaining the core problem
+   - target_audience: array of exactly 3 objects, each with "icon" (string) and "text" (string) properties
+   - success_metrics: array of exactly 3 objects, each with "type" (string: Kuantitatif or Kualitatif) and "text" (string) properties
+   - tech_stack: array of 5-7 technology strings
 
-          2.  **workbenchContent**: A detailed narrative blueprint as a single Markdown string. The language used MUST match the user's input language.
-               * **### Fitur Utama (Core Features)**
-                  Start by listing the core features based on the "Core MVP Features" provided. Present this as a clear, high-level overview of what the application does. For EACH feature, write a short paragraph explaining how it works technically and the benefit to the user.
+2. workbenchContent (string containing markdown with these sections):
+   - Fitur Utama (Core Features) - detailed explanation of each MVP feature
+   - Roadmap - phased plan (MVP, Phase 2, Future)
+   - Task Breakdown - 10-15 tasks per category (Frontend, Backend, Database, DevOps)
+   - User Stories - 7-10 detailed user stories
+   - System Architecture - describe in PROSE ONLY, no diagrams
+   - API Endpoints - at least 5 key endpoints with methods and sample requests
+   - Strategi Monetisasi - 2-3 revenue strategies
 
-              * **### Roadmap**
-                  Create a phased roadmap (e.g., MVP, Phase 2, Future). The MVP phase must include the core features. Each phase should have clear milestones and outcomes.
+CRITICAL JSON FORMAT for arrays:
+target_audience must be exactly like this:
+[{{"icon": "student", "text": "Description here"}}, {{"icon": "professional", "text": "Description here"}}, {{"icon": "user", "text": "Description here"}}]
 
-              * **### Task Breakdown**
-                  Break down the MVP phase into actionable tasks categorized by Frontend, Backend, Database, and DevOps/Testing. Create 10-15 specific tasks per category in a checklist format.
+success_metrics must be exactly like this:
+[{{"type": "Kuantitatif", "text": "Metric description"}}, {{"type": "Kuantitatif", "text": "Metric description"}}, {{"type": "Kualitatif", "text": "Metric description"}}]
 
-              * **### User Stories**
-                  Write 7-10 detailed user stories based on the Core MVP Features. Use the format: "As a [role], I want [feature], so that [benefit]".
-
-              * **### System Architecture**
-                  Describe a clear architecture (Frontend, Backend, Database, Auth, Deployment). Explain how the tech stack choices support the project's goals, and mention scalability and security considerations.
-
-              * **### API Endpoints**
-                  - List at least 5 key endpoints.
-                  - Include Method, Path, and a sample Request Body for each.
-
-              * **### Strategi Monetisasi (Monetization Strategy)**
-                  Suggest 2-3 potential ways this project could generate revenue (e.g., subscription, freemium, ads, one-time purchase). Briefly explain each strategy.
-
-          🔹 **IMPORTANT RULES**
-          - The entire output MUST be a perfectly valid, parsable JSON.
-          - The value for "workbenchContent" must be a single string containing formatted markdown.
-          - The blueprint must be a direct, logical, and detailed expansion of the **Selected Project Idea** provided above.
-        """
+CRITICAL RULES:
+- Return ONLY valid JSON
+- All arrays must contain properly formatted objects
+- Match the language of the user input
+- DO NOT use ASCII diagrams or code blocks with special characters in workbenchContent
+- For System Architecture, describe in plain text paragraphs, NOT code blocks or diagrams
+- Escape all special characters properly in the markdown string
+"""
 
         chat_completion = client.chat.completions.create(
             messages=[
                 {"role": "user", "content": prompt}
             ],
             model=model_llm,
-            temperature=0.8,
+            temperature=0.7,
             max_completion_tokens=6000,
             response_format={"type": "json_object"}
         )
 
         response_text = chat_completion.choices[0].message.content
         data = json.loads(response_text)
+        print("data blueprint: ", data)
+        
+        # Validate and fix target_audience if malformed
+        if "projectData" in data:
+            pd = data["projectData"]
+            
+            # Fix target_audience if it's malformed
+            if "target_audience" in pd:
+                ta = pd["target_audience"]
+                if isinstance(ta, list) and len(ta) > 0:
+                    # Check if first element is a dict with proper structure
+                    if not isinstance(ta[0], dict) or "icon" not in ta[0]:
+                        # Array is corrupted, provide default
+                        pd["target_audience"] = [
+                            {"icon": "user", "text": "General users interested in this application"},
+                            {"icon": "professional", "text": "Professionals seeking productivity tools"},
+                            {"icon": "student", "text": "Students and learners"}
+                        ]
+                else:
+                    pd["target_audience"] = []
+            
+            # Fix success_metrics if it's malformed
+            if "success_metrics" in pd:
+                sm = pd["success_metrics"]
+                if isinstance(sm, list) and len(sm) > 0:
+                    if not isinstance(sm[0], dict) or "type" not in sm[0]:
+                        pd["success_metrics"] = [
+                            {"type": "Kuantitatif", "text": "Achieve 1,000 monthly active users within 6 months"},
+                            {"type": "Kuantitatif", "text": "Maintain 40% user retention after 30 days"},
+                            {"type": "Kualitatif", "text": "Achieve NPS score above 50"}
+                        ]
+                else:
+                    pd["success_metrics"] = []
+
         return data
 
     except Exception as e:
         print(f"Error in generate-blueprint: {e}")
-        # Return error as standard HTTP exception
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/generate-database-schema")

@@ -145,53 +145,55 @@ export const useInterviewMachine = () => {
     // Then start loading
     setIsLoading(true);
 
-    if (newHistory.length >= 3) {
-      // Stay in interviewing state, don't switch to generating
-      // Add a message indicating we're generating ideas
-      const generatingMessage: ChatMessage = {
-        id: `msg-${Date.now()}-generating`,
-        role: "assistant",
-        content:
-          "Great! Let me generate some project ideas based on our conversation...",
-        timestamp: new Date(),
-      };
+    // Always call continueInterview - AI will decide whether to continue or conclude
+    try {
+      const data = await api.continueInterview(
+        sessionState.interest,
+        newHistory
+      );
 
-      updateState("interviewing", {
-        conversationHistory: newHistory,
-        currentQuestion: "",
-        messages: [...updatedMessages, generatingMessage],
-      });
+      // AI-driven decision: check if interview should continue
+      if (!data.shouldContinue) {
+        // AI determined we have sufficient information
+        // Add AI's conclusion message
+        const conclusionMessage: ChatMessage = {
+          id: `msg-${Date.now()}-conclusion`,
+          role: "assistant",
+          content:
+            "Perfect! I have enough information to generate tailored project ideas for you...",
+          timestamp: new Date(),
+        };
 
-      // Loading will show in chat as thinking indicator
-      try {
-        const data = await api.generateIdeas({
-          interest: sessionState.interest,
-          conversation: newHistory,
-        });
-
-        // Add small delay before transition for smooth animation
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        updateState("showOptions", {
-          ideaOptions: data.ideas,
-          conversationHistory: newHistory,
-          messages: [...updatedMessages, generatingMessage],
-        });
-      } catch (err: any) {
-        toast.error("Error", { description: err.message });
         updateState("interviewing", {
-          conversationHistory: sessionState.conversationHistory,
-          messages: sessionState.messages,
+          conversationHistory: newHistory,
+          currentQuestion: "",
+          messages: [...updatedMessages, conclusionMessage],
         });
-      }
-    } else {
-      try {
-        const data = await api.continueInterview(
-          sessionState.interest,
-          newHistory
-        );
 
-        // Add AI's next question to messages
+        // Generate ideas
+        try {
+          const ideaData = await api.generateIdeas({
+            interest: sessionState.interest,
+            conversation: newHistory,
+          });
+
+          // Add small delay before transition for smooth animation
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          updateState("showOptions", {
+            ideaOptions: ideaData.ideas,
+            conversationHistory: newHistory,
+            messages: [...updatedMessages, conclusionMessage],
+          });
+        } catch (err: any) {
+          toast.error("Error generating ideas", { description: err.message });
+          updateState("interviewing", {
+            conversationHistory: sessionState.conversationHistory,
+            messages: sessionState.messages,
+          });
+        }
+      } else {
+        // Continue interview - Add AI's next question to messages
         const aiMessage: ChatMessage = {
           id: `msg-${Date.now()}-ai`,
           role: "assistant",
@@ -204,10 +206,11 @@ export const useInterviewMachine = () => {
           currentQuestion: data.question,
           messages: [...updatedMessages, aiMessage],
         });
-      } catch (err: any) {
-        toast.error("Error", { description: err.message });
       }
+    } catch (err: any) {
+      toast.error("Error", { description: err.message });
     }
+
     setIsLoading(false);
   };
 
