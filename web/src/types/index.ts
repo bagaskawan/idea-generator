@@ -83,6 +83,13 @@ export interface ConversationTurn {
   answer: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+}
+
 export interface IdeaOption {
   projectName: string;
   projectDescription: string;
@@ -116,6 +123,7 @@ export interface InterviewSessionState {
   currentQuestion: string;
   ideaOptions: IdeaOption[];
   generatedBlueprint: GeneratedBlueprint | null;
+  messages: ChatMessage[]; // Chat format for UI
 }
 
 export interface HeadingItem {

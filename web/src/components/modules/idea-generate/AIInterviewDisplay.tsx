@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useInterviewMachine } from "@/hooks/features/useInterviewMachine";
 import { LoadingState } from "@/components/modules/idea-generate/LoadingState";
 
@@ -24,6 +24,14 @@ function AIInterviewDisplayContent() {
     handleSaveIdea,
     clearInterviewState,
   } = useInterviewMachine();
+
+  // Clear session storage when component unmounts (user leaves page)
+  useEffect(() => {
+    return () => {
+      // Cleanup on unmount
+      sessionStorage.removeItem("interviewSessionState");
+    };
+  }, []);
 
   if (currentStep === "generating") {
     return (

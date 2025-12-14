@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-model_llm = "llama-3.3-70b-versatile"
+model_llm = "openai/gpt-oss-120b"
 
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
@@ -43,7 +43,7 @@ async def generate_ideas_list(request: IdeaRequest):
           {{
             "projectName": "Name of the project",
             "reasonProjectName": "One sentence on why this name fits",
-            "projectDescription": "2-3 sentences explaining the core value and solution.",
+            "projectDescription": "A comprehensive and detailed explanation (minimum 5 sentences) describing the core value, problem solution, and user impact.",
             "uniqueSellingProposition": "The key differentiator that makes this special.",
             "mvpFeatures": ["Feature 1", "Feature 2", "Feature 3"]
           }},
@@ -88,7 +88,12 @@ async def generate_blueprint(request: GenerateBlueprintRequest):
     try:
         prompt = f"""
           You are "Architech", a world-class CTO and Digital Product Architect.
-          Your mission is to expand a chosen project idea into a complete, professional, and actionable project blueprint. You will be given the entire context of the user's journey, from initial interest to the final selected idea.
+          Your mission is to expand a chosen project idea into a complete, professional, and actionable project blueprint.
+          
+          *** CRITICAL INSTRUCTION: ***
+          - You MUST be EXTREMELY VERBOSE. Do not summarize. Do not be concise.
+          - Every section must be expanded with multiple paragraphs, examples, and deep technical details.
+          - If a section usually takes 1 sentence, write 5 sentences.
 
           ---
           ## User's Journey Context
@@ -118,22 +123,23 @@ async def generate_blueprint(request: GenerateBlueprintRequest):
 
           2.  **workbenchContent**: A detailed narrative blueprint as a single Markdown string. The language used MUST match the user's input language.
                * **### Fitur Utama (Core Features)**
-                  Start by listing the core features based on the "Core MVP Features" provided. Present this as a clear, high-level overview of what the application does.
+                  Start by listing the core features based on the "Core MVP Features" provided. Present this as a clear, high-level overview of what the application does. For EACH feature, write a short paragraph explaining how it works technically and the benefit to the user.
 
               * **### Roadmap**
                   Create a phased roadmap (e.g., MVP, Phase 2, Future). The MVP phase must include the core features. Each phase should have clear milestones and outcomes.
 
               * **### Task Breakdown**
-                  Break down the MVP phase into actionable tasks categorized by Frontend, Backend, Database, and DevOps/Testing. Create 5-10 specific tasks per category in a checklist format.
+                  Break down the MVP phase into actionable tasks categorized by Frontend, Backend, Database, and DevOps/Testing. Create 10-15 specific tasks per category in a checklist format.
 
               * **### User Stories**
-                  Write 5-7 detailed user stories based on the Core MVP Features. Use the format: "As a [role], I want [feature], so that [benefit]".
+                  Write 7-10 detailed user stories based on the Core MVP Features. Use the format: "As a [role], I want [feature], so that [benefit]".
 
               * **### System Architecture**
                   Describe a clear architecture (Frontend, Backend, Database, Auth, Deployment). Explain how the tech stack choices support the project's goals, and mention scalability and security considerations.
 
               * **### API Endpoints**
-                  List key API endpoints with HTTP Method, Path, a brief description, and a summary of the request/response structure.
+                  - List at least 5 key endpoints.
+                  - Include Method, Path, and a sample Request Body for each.
 
               * **### Strategi Monetisasi (Monetization Strategy)**
                   Suggest 2-3 potential ways this project could generate revenue (e.g., subscription, freemium, ads, one-time purchase). Briefly explain each strategy.
@@ -149,7 +155,7 @@ async def generate_blueprint(request: GenerateBlueprintRequest):
                 {"role": "user", "content": prompt}
             ],
             model=model_llm,
-            temperature=0.5,
+            temperature=0.8,
             response_format={"type": "json_object"}
         )
 
@@ -223,7 +229,7 @@ async def generate_database_schema(request: GenerateDatabaseSchemaRequest):
                 {"role": "user", "content": prompt}
             ],
             model=model_llm,
-            temperature=0.2, # Rendah untuk presisi teknis
+            temperature=0.7, # Rendah untuk presisi teknis
             response_format={"type": "json_object"}
         )
 
@@ -231,11 +237,14 @@ async def generate_database_schema(request: GenerateDatabaseSchemaRequest):
         generated_schema = json.loads(response_text)
 
         # Save to Supabase
-        data, count = supabase.table("database_schemas").upsert({
+        data, count = supabase.table("database_schemas").upsert(
+            {
             "project_id": request.projectId,
             "schema_data": generated_schema,
             "updated_at": "now()"
-        }).execute()
+            },
+            on_conflict="project_id"
+        ).execute()
         
         return generated_schema
 

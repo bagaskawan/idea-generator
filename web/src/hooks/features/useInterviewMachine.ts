@@ -11,6 +11,7 @@ import {
   InterviewSessionState,
   InterviewStep,
   GeneratedBlueprint,
+  ChatMessage,
 } from "@/types";
 
 const sessionStorageKey = "interviewSessionState";
@@ -26,6 +27,7 @@ export const useInterviewMachine = () => {
     currentQuestion: "",
     ideaOptions: [],
     generatedBlueprint: null,
+    messages: [],
   });
 
   const [currentAnswer, setCurrentAnswer] = useState("");
@@ -69,6 +71,7 @@ export const useInterviewMachine = () => {
       currentQuestion: "",
       ideaOptions: [],
       generatedBlueprint: null,
+      messages: [],
     });
     setCurrentAnswer("");
     router.push(pathname);
@@ -81,10 +84,28 @@ export const useInterviewMachine = () => {
 
     try {
       const data = await api.startInterview(interestValue);
+
+      // Add user's initial interest as first message
+      const userInterestMessage: ChatMessage = {
+        id: `msg-${Date.now()}-interest`,
+        role: "user",
+        content: interestValue,
+        timestamp: new Date(),
+      };
+
+      // Add AI's first question as second message
+      const aiQuestionMessage: ChatMessage = {
+        id: `msg-${Date.now()}-ai`,
+        role: "assistant",
+        content: data.question,
+        timestamp: new Date(),
+      };
+
       updateState("interviewing", {
         interest: interestValue,
         currentQuestion: data.question,
         conversationHistory: [],
+        messages: [userInterestMessage, aiQuestionMessage],
       });
     } catch (err: any) {
       toast.error("Error", { description: err.message });
@@ -96,28 +117,71 @@ export const useInterviewMachine = () => {
 
   const handleContinueInterview = async () => {
     if (!currentAnswer.trim()) return;
-    setIsLoading(true);
+
     const newHistory: ConversationTurn[] = [
       ...sessionState.conversationHistory,
       { question: sessionState.currentQuestion, answer: currentAnswer },
     ];
+
+    // Add user's answer to messages
+    const userMessage: ChatMessage = {
+      id: `msg-${Date.now()}-user`,
+      role: "user",
+      content: currentAnswer,
+      timestamp: new Date(),
+    };
+    const updatedMessages = [...sessionState.messages, userMessage];
+
+    // Clear input and show user message first
     setCurrentAnswer("");
 
+    // Update state to show user message immediately
+    updateState("interviewing", {
+      conversationHistory: sessionState.conversationHistory,
+      currentQuestion: sessionState.currentQuestion,
+      messages: updatedMessages,
+    });
+
+    // Then start loading
+    setIsLoading(true);
+
     if (newHistory.length >= 3) {
-      updateState("generating", { conversationHistory: newHistory });
+      // Stay in interviewing state, don't switch to generating
+      // Add a message indicating we're generating ideas
+      const generatingMessage: ChatMessage = {
+        id: `msg-${Date.now()}-generating`,
+        role: "assistant",
+        content:
+          "Great! Let me generate some project ideas based on our conversation...",
+        timestamp: new Date(),
+      };
+
+      updateState("interviewing", {
+        conversationHistory: newHistory,
+        currentQuestion: "",
+        messages: [...updatedMessages, generatingMessage],
+      });
+
+      // Loading will show in chat as thinking indicator
       try {
         const data = await api.generateIdeas({
           interest: sessionState.interest,
           conversation: newHistory,
         });
+
+        // Add small delay before transition for smooth animation
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
         updateState("showOptions", {
           ideaOptions: data.ideas,
           conversationHistory: newHistory,
+          messages: [...updatedMessages, generatingMessage],
         });
       } catch (err: any) {
         toast.error("Error", { description: err.message });
         updateState("interviewing", {
           conversationHistory: sessionState.conversationHistory,
+          messages: sessionState.messages,
         });
       }
     } else {
@@ -126,9 +190,19 @@ export const useInterviewMachine = () => {
           sessionState.interest,
           newHistory
         );
+
+        // Add AI's next question to messages
+        const aiMessage: ChatMessage = {
+          id: `msg-${Date.now()}-ai`,
+          role: "assistant",
+          content: data.question,
+          timestamp: new Date(),
+        };
+
         updateState("interviewing", {
           conversationHistory: newHistory,
           currentQuestion: data.question,
+          messages: [...updatedMessages, aiMessage],
         });
       } catch (err: any) {
         toast.error("Error", { description: err.message });

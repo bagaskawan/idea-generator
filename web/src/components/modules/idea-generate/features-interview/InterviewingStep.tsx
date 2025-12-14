@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/components/shared/ui/button";
-import { ExpandingTextarea } from "@/components/shared/ui/expandingtextarea";
-import { GeneratingAnimation } from "@/components/shared/ui/generatinganimation";
+import { ChatContainer } from "@/components/shared/ui/ChatContainer";
+import { ChatInput } from "@/components/shared/ui/ChatInput";
+import { ChatMessage } from "@/components/shared/ui/ChatMessage";
 import { InterviewSessionState } from "@/types";
 
 interface InterviewingStepProps {
@@ -22,58 +22,62 @@ export const InterviewingStep = ({
 }: InterviewingStepProps) => {
   const step = sessionState.conversationHistory.length + 1;
   const totalSteps = 3;
-  const isLastStep = step >= totalSteps;
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)]">
-        <GeneratingAnimation
-          texts={[
-            "Analyzing your answer...",
-            "Formulating the next question...",
-          ]}
-          className="text-3xl font-semibold text-muted-foreground tracking-tight"
-        />
-      </div>
-    );
-  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-10rem)] px-4 animate-in fade-in-50 text-center pb-24">
-      <div className="max-w-4xl w-full mx-auto bg-card rounded-2xl p-8 ">
-        <div className="flex justify-between items-start mb-10">
-          <h2 className="text-3xl font-bold text-gray-900 tracking-tight dark:text-gray-100"></h2>
-          <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+    <div className="flex flex-col h-[calc(100vh-8rem)] animate-in fade-in-50 duration-500">
+      {/* Header */}
+      <div className="flex-shrink-0 border-b border-border px-6 py-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center">
+              <span className="text-white text-sm font-semibold">AI</span>
+            </div>
+            <div>
+              <h2 className="font-semibold text-foreground">AI Architect</h2>
+              <p className="text-xs text-muted-foreground">
+                {isLoading ? "Thinking..." : "Online"}
+              </p>
+            </div>
+          </div>
+          <span className="text-sm text-muted-foreground">
             {step}/{totalSteps}
           </span>
         </div>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleContinue();
-          }}
-          className="space-y-6"
-        >
-          <h2 className="text-2xl  md:text-3xl font-semibold text-foreground tracking-tight mb-10 text-left">
-            {sessionState.currentQuestion}
-          </h2>
-          <ExpandingTextarea
-            value={currentAnswer}
-            onChange={(e) => setCurrentAnswer(e.target.value)}
-            autoFocus
-            placeholder="Your answer..."
-            disabled={isLoading}
+      </div>
+
+      {/* Messages Container */}
+      <ChatContainer className="flex-1 py-6">
+        {sessionState.messages.map((message) => (
+          <ChatMessage
+            key={message.id}
+            role={message.role}
+            content={message.content}
+            timestamp={message.timestamp}
           />
-          <div className="mt-8 flex justify-end">
-            <Button
-              type="submit"
-              disabled={isLoading || !currentAnswer.trim()}
-              size="lg"
-            >
-              {isLastStep ? "Generate Ideas" : "Next Step"}
-            </Button>
-          </div>
-        </form>
+        ))}
+
+        {/* Thinking indicator */}
+        {isLoading && (
+          <ChatMessage
+            role="assistant"
+            content=""
+            timestamp={new Date()}
+            isThinking={true}
+          />
+        )}
+      </ChatContainer>
+
+      {/* Input Area */}
+      <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <ChatInput
+          value={currentAnswer}
+          onChange={setCurrentAnswer}
+          onSubmit={handleContinue}
+          disabled={isLoading}
+          placeholder={isLoading ? "AI is thinking..." : "Type your answer..."}
+          centered={false}
+          autoFocus={false}
+        />
       </div>
     </div>
   );

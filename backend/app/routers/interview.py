@@ -11,7 +11,7 @@ load_dotenv()
 router = APIRouter()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-model_llm = "llama-3.3-70b-versatile"
+model_llm = "openai/gpt-oss-120b"
 
 @router.post("/start")
 async def start_interview(request: StartInterviewRequest):
