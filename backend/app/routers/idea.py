@@ -56,7 +56,8 @@ async def generate_ideas_list(request: IdeaRequest):
                 {"role": "user", "content": prompt}
             ],
             model=model_llm,
-            temperature=0.7,
+            temperature=0.8,
+            max_completion_tokens=4000,
             response_format={"type": "json_object"}
         )
         response_text = chat_completion.choices[0].message.content
@@ -156,6 +157,7 @@ async def generate_blueprint(request: GenerateBlueprintRequest):
             ],
             model=model_llm,
             temperature=0.8,
+            max_completion_tokens=6000,
             response_format={"type": "json_object"}
         )
 
