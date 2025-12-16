@@ -273,3 +273,103 @@ async def generate_database_schema(request: GenerateDatabaseSchemaRequest):
     except Exception as e:
         print(f"Error in generate-database-schema: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/generate-flowchart")
+async def generate_flowchart(request: GenerateDatabaseSchemaRequest):
+    """Generate a Mermaid.js flowchart from project context"""
+    try:
+        prompt = f"""You are "ArchiGraph", a System Architect expert in Mermaid.js.
+Create a System Architecture Flowchart for this project.
+
+CONTEXT:
+{request.projectContext}
+
+STRICT SYNTAX RULES:
+1. Start with exactly: graph TD
+2. Arrow with label: A -->|label text| B (NO space after the pipe)
+3. Arrow without label: A --> B
+4. Node shapes:
+   - Rectangle: [Text]
+   - Rounded: (Text)
+   - Circle: ((Text))
+   - Cylinder: [(Text)]
+   - Hexagon: {{{{Text}}}}
+
+INCLUDE THESE COMPONENTS:
+- User entry point
+- Frontend layer
+- Backend/API layer  
+- Database
+- External services if relevant
+
+RETURN ONLY the Mermaid code. No markdown, no explanation.
+
+EXAMPLE (copy this exact syntax style):
+graph TD
+    User((User)) -->|Request| FE[Frontend]
+    FE -->|API Call| BE[Backend]
+    BE -->|Query| DB[(Database)]
+    BE -->|Auth| Auth{{Auth Service}}
+"""
+
+        chat_completion = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model=model_llm,
+            temperature=0.1,  # Very low for consistent syntax
+            max_completion_tokens=2000,
+        )
+
+        response_text = chat_completion.choices[0].message.content
+        
+        # Clean output - remove markdown code blocks
+        clean_code = response_text.replace("```mermaid", "").replace("```", "").strip()
+        
+        # Sanitize common syntax errors from AI
+        import re
+        
+        # Fix "|>" to "|" (invalid arrow ending)
+        clean_code = clean_code.replace("|>", "|")
+        
+        # Fix mixed brackets like {( or ({ - convert to simple brackets
+        clean_code = re.sub(r'\{\(', '{{', clean_code)  # {( -> {{
+        clean_code = re.sub(r'\)\}', '}}', clean_code)  # )} -> }}
+        clean_code = re.sub(r'\(\{', '{{', clean_code)  # ({ -> {{
+        clean_code = re.sub(r'\}\)', '}}', clean_code)  # }) -> }}
+        
+        # Fix spaces in arrow labels: -->| label| to -->|label|
+        clean_code = re.sub(r'-->\s*\|\s+', '-->|', clean_code)
+        clean_code = re.sub(r'\s+\|(\s)', '|', clean_code)
+        
+        # Fix double spaces
+        clean_code = re.sub(r'  +', ' ', clean_code)
+        
+        # Save to Supabase
+        supabase.table("flowcharts").upsert({
+            "project_id": request.projectId,
+            "chart_code": clean_code,
+            "updated_at": "now()"
+        }, on_conflict="project_id").execute()
+        
+        return {"chart": clean_code}
+
+    except Exception as e:
+        print(f"Error in generate-flowchart: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/flowchart/{project_id}")
+async def get_flowchart(project_id: str):
+    """Get saved flowchart for a project"""
+    try:
+        result = supabase.table("flowcharts").select("chart_code").eq("project_id", project_id).single().execute()
+        
+        if result.data:
+            return {"chart": result.data["chart_code"]}
+        else:
+            return {"chart": None}
+    except Exception as e:
+        # No flowchart found is not an error
+        return {"chart": None}
+
+

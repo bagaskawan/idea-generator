@@ -2,7 +2,12 @@
 
 import { useCallback, useRef } from "react";
 import { type BlockNoteEditor } from "@blocknote/core";
-import { findParentHeader, getBlockText } from "@/lib/blocknoteHeaderUtils";
+import {
+  findParentHeader,
+  getBlockText,
+  getTextBetweenHeaderAndBlock,
+  getContextBetweenHeaderAndBlock,
+} from "@/lib/blocknoteHeaderUtils";
 
 export function useParentHeaderDetector(editor: BlockNoteEditor) {
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -20,7 +25,25 @@ export function useParentHeaderDetector(editor: BlockNoteEditor) {
 
     if (parentHeader) {
       const headerText = getBlockText(parentHeader);
-      console.log("⬆️ Induk Ditemukan:", headerText, parentHeader);
+      console.log("⬆️ Induk Ditemukan:", headerText);
+
+      // Teks lengkap dari header sampai current block (inklusif)
+      const fullText = getTextBetweenHeaderAndBlock(
+        editor,
+        parentHeader,
+        currentBlock
+      );
+      console.log("📄 Teks Lengkap (Header → Current Block):\n", fullText);
+
+      // Teks context di antara (tidak termasuk header dan current block)
+      const contextText = getContextBetweenHeaderAndBlock(
+        editor,
+        parentHeader,
+        currentBlock
+      );
+      if (contextText) {
+        console.log("📝 Context (di antara):\n", contextText);
+      }
     } else {
       console.log("⬆️ Tidak ada heading/induk yang ditemukan.");
     }

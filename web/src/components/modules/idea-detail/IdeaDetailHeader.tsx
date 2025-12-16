@@ -1,5 +1,12 @@
 import { Button } from "@/components/shared/ui/button";
-import { ArrowLeft, Ellipsis, Database, Trash2, File } from "lucide-react";
+import {
+  ArrowLeft,
+  Ellipsis,
+  Database,
+  Trash2,
+  File,
+  GitBranch,
+} from "lucide-react";
 import Link from "next/link";
 import {
   DropdownMenu,
@@ -47,6 +54,7 @@ export default function IdeaDetailHeader({
   // --- PERBAIKAN: State untuk mengelola proses generate schema ---
   const [isGeneratingSchema, setIsGeneratingSchema] = useState(false);
   const [hasSchema, setHasSchema] = useState(false);
+  const [hasFlowchart, setHasFlowchart] = useState(false);
 
   // PDF Preview State
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -55,7 +63,19 @@ export default function IdeaDetailHeader({
     if (idea?.hasSchema) {
       setHasSchema(true);
     }
-  }, [idea]);
+    // Check for flowchart
+    const checkFlowchart = async () => {
+      try {
+        const data = await api.getFlowchart(id);
+        if (data.chart) {
+          setHasFlowchart(true);
+        }
+      } catch {
+        // No flowchart
+      }
+    };
+    checkFlowchart();
+  }, [idea, id]);
 
   useEffect(() => {
     if (!isDeleteDialogOpen) {
@@ -189,6 +209,14 @@ export default function IdeaDetailHeader({
                 {hasSchema
                   ? "View Database Schema"
                   : "Generate Database Schema"}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => router.push(`/idea/${id}/flowchart`)}
+            >
+              <GitBranch className="w-4 h-4 mr-2" />
+              <span>
+                {hasFlowchart ? "View Flowchart" : "Generate Flowchart"}
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem

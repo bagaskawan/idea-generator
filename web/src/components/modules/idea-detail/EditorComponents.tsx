@@ -27,6 +27,12 @@ import {
   makeInformal,
 } from "@/components/shared/ai/CustomeAIMenuItems";
 
+// Import utility functions for context extraction
+import {
+  findParentHeader,
+  getTextBetweenHeaderAndBlock,
+} from "@/lib/blocknoteHeaderUtils";
+
 /**
  * Custom slash menu item: "Continue with AI"
  * Calls our FastAPI backend to generate a continuation of the current text
@@ -40,9 +46,19 @@ function getContinueWithAISlashItem(editor: BlockNoteEditor) {
       const cursorPosition = editor.getTextCursorPosition();
       const currentBlock = cursorPosition.block;
 
-      // Extract text from block content
+      // Get section context: from parent header to current block
+      const parentHeader = findParentHeader(editor, currentBlock);
       let blockText = "";
-      if (currentBlock.content && Array.isArray(currentBlock.content)) {
+
+      if (parentHeader) {
+        // Use full section context from header to current position
+        blockText = getTextBetweenHeaderAndBlock(
+          editor,
+          parentHeader,
+          currentBlock
+        );
+      } else if (currentBlock.content && Array.isArray(currentBlock.content)) {
+        // Fallback: use just current block text if no parent header
         blockText = currentBlock.content
           .map((item: { type: string; text?: string }) =>
             item.type === "text" ? item.text || "" : ""
@@ -51,8 +67,8 @@ function getContinueWithAISlashItem(editor: BlockNoteEditor) {
       }
 
       if (!blockText.trim()) {
-        toast.warning("No text to continue", {
-          description: "Please write some text first, then use this command.",
+        toast.warning("No context found", {
+          description: "Please add a heading or some text first.",
         });
         return;
       }
@@ -158,7 +174,6 @@ export function SlashMenuWithAI({ editor }: { editor: BlockNoteEditor }) {
           [
             ...getDefaultReactSlashMenuItems(editor),
             ...getAISlashMenuItems(editor),
-            getContinueWithAISlashItem(editor),
           ],
           query
         )

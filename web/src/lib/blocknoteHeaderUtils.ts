@@ -83,3 +83,143 @@ export function getBlockText(block: Block | null | undefined): string {
     .map((contentNode) => contentNode.text)
     .join("");
 }
+
+/**
+ * Mencari index dari sebuah blok di array topLevelBlocks.
+ * @param blocks - Array blok top-level.
+ * @param targetId - ID blok yang dicari.
+ * @returns Index dari blok atau -1 jika tidak ditemukan.
+ */
+function findBlockIndex(blocks: Block[], targetId: string): number {
+  return blocks.findIndex((block) => block.id === targetId);
+}
+
+/**
+ * Mengambil semua blok antara dua blok (inklusif).
+ * @param editor - Instance BlockNoteEditor.
+ * @param startBlock - Blok awal (biasanya parentHeader).
+ * @param endBlock - Blok akhir (biasanya currentBlock atau ancestornya).
+ * @returns Array dari blok-blok yang berada di antara keduanya.
+ */
+export function getBlocksInRange(
+  editor: BlockNoteEditor,
+  startBlock: Block,
+  endBlock: Block
+): Block[] {
+  const topLevelBlocks = editor.document;
+
+  // Cari ancestor teratas dari endBlock (jika nested)
+  let highestAncestor = endBlock;
+  while (true) {
+    const parent = searchForDirectParent(topLevelBlocks, highestAncestor.id);
+    if (parent) {
+      highestAncestor = parent;
+    } else {
+      break;
+    }
+  }
+
+  const startIndex = findBlockIndex(topLevelBlocks, startBlock.id);
+  const endIndex = findBlockIndex(topLevelBlocks, highestAncestor.id);
+
+  if (startIndex === -1 || endIndex === -1) {
+    return [];
+  }
+
+  // Pastikan startIndex <= endIndex
+  const [from, to] =
+    startIndex <= endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
+
+  return topLevelBlocks.slice(from, to + 1);
+}
+
+/**
+ * Mengambil semua teks dari parentHeader sampai currentBlock.
+ * @param editor - Instance BlockNoteEditor.
+ * @param parentHeader - Blok heading induk.
+ * @param currentBlock - Blok saat ini (yang di-select).
+ * @returns String berisi semua teks dari header sampai block saat ini.
+ */
+export function getTextBetweenHeaderAndBlock(
+  editor: BlockNoteEditor,
+  parentHeader: Block,
+  currentBlock: Block
+): string {
+  const blocksInRange = getBlocksInRange(editor, parentHeader, currentBlock);
+
+  const texts: string[] = [];
+
+  // Recursive function untuk extract text dari block dan children-nya
+  const extractText = (block: Block, depth: number = 0): void => {
+    const indent = "  ".repeat(depth);
+    const text = getBlockText(block);
+
+    if (text) {
+      // Tambahkan prefix berdasarkan tipe block
+      if (block.type === "heading") {
+        const level = (block.props as { level?: number })?.level || 1;
+        texts.push(`${"#".repeat(level)} ${text}`);
+      } else if (block.type === "bulletListItem") {
+        texts.push(`${indent}- ${text}`);
+      } else if (block.type === "numberedListItem") {
+        texts.push(`${indent}1. ${text}`);
+      } else if (block.type === "checkListItem") {
+        const checked = (block.props as { checked?: boolean })?.checked;
+        texts.push(`${indent}[${checked ? "x" : " "}] ${text}`);
+      } else {
+        texts.push(`${indent}${text}`);
+      }
+    }
+
+    // Process children recursively
+    if (block.children && block.children.length > 0) {
+      for (const child of block.children) {
+        extractText(child, depth + 1);
+      }
+    }
+  };
+
+  for (const block of blocksInRange) {
+    extractText(block);
+  }
+
+  return texts.join("\n");
+}
+
+/**
+ * Variant yang mengembalikan hanya teks di ANTARA (tidak termasuk header dan current block).
+ */
+export function getContextBetweenHeaderAndBlock(
+  editor: BlockNoteEditor,
+  parentHeader: Block,
+  currentBlock: Block
+): string {
+  const blocksInRange = getBlocksInRange(editor, parentHeader, currentBlock);
+
+  // Skip first (header) and last (current block) jika ada lebih dari 2 block
+  if (blocksInRange.length <= 2) {
+    return "";
+  }
+
+  const contextBlocks = blocksInRange.slice(1, -1);
+
+  const texts: string[] = [];
+
+  const extractText = (block: Block): void => {
+    const text = getBlockText(block);
+    if (text) {
+      texts.push(text);
+    }
+    if (block.children) {
+      for (const child of block.children) {
+        extractText(child);
+      }
+    }
+  };
+
+  for (const block of contextBlocks) {
+    extractText(block);
+  }
+
+  return texts.join("\n");
+}

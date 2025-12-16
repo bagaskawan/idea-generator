@@ -48,6 +48,28 @@ export const api = {
   generateDatabaseSchema: (data: any) =>
     fetchFromBackend("/api/idea/generate-database-schema", "POST", data),
 
-  generateAICompletion: (context: string, prompt?: string) =>
-    fetchFromBackend("/api/ai/editor-completion", "POST", { context, prompt }),
+  // AI completion now uses Next.js API route (not FastAPI)
+  generateAICompletion: async (context: string, prompt?: string) => {
+    const response = await fetch("/api/ai/editor-completion", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ context, prompt }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || "Failed to generate AI completion");
+    }
+
+    return response.json();
+  },
+
+  generateFlowchart: (projectId: string, projectContext: string) =>
+    fetchFromBackend("/api/idea/generate-flowchart", "POST", {
+      projectId,
+      projectContext,
+    }),
+
+  getFlowchart: (projectId: string) =>
+    fetchFromBackend(`/api/idea/flowchart/${projectId}`, "GET"),
 };
