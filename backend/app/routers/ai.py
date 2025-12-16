@@ -191,18 +191,20 @@ IMPORTANT: You MUST use the applyDocumentOperations tool to make changes. Respon
                         logger.error(f"[BlockNote AI] Failed to parse tool args: {e}")
                         parsed_args = {}
                     
-                    # Emit tool call events in correct order per AI SDK v5 protocol
+                    # Emit tool call events per AI SDK v5 protocol
+                    # For client-side tools like BlockNote's applyDocumentOperations,
+                    # we only send input events. The client executes the tool and handles output.
+                    
                     # 1. Tool input start - indicates tool call beginning
                     yield f"data: {json.dumps({'type': 'tool-input-start', 'toolCallId': tool_call_id, 'toolName': tool_name})}\n\n"
                     
-                    # 2. Tool input available - complete input is ready
+                    # 2. Tool input available - complete input is ready for client-side execution
                     yield f"data: {json.dumps({'type': 'tool-input-available', 'toolCallId': tool_call_id, 'toolName': tool_name, 'input': parsed_args})}\n\n"
                     
-                    # 3. Tool output available - for BlockNote AI, the tool executes client-side
-                    #    but we need to signal completion. The output is the operations that will be applied.
-                    yield f"data: {json.dumps({'type': 'tool-output-available', 'toolCallId': tool_call_id, 'output': parsed_args})}\n\n"
+                    # Note: Do NOT send tool-output-available here!
+                    # BlockNote AI executes applyDocumentOperations client-side and handles output internally.
                     
-                    logger.info(f"[BlockNote AI] Sent complete tool call sequence for {tool_name}")
+                    logger.info(f"[BlockNote AI] Sent tool input events for {tool_name}")
             else:
                 logger.warning(f"[BlockNote AI] No tool calls in response despite having tools")
             
