@@ -67,11 +67,13 @@ export const ResultStep = ({
   const { projectData, workbenchContent } = blueprint;
 
   useEffect(() => {
-    if (editor && workbenchContent) {
-      editor.tryParseMarkdownToBlocks(workbenchContent).then((blocks) => {
+    const loadContent = async () => {
+      if (editor && workbenchContent) {
+        const blocks = await editor.tryParseMarkdownToBlocks(workbenchContent);
         editor.replaceBlocks(editor.topLevelBlocks, blocks);
-      });
-    }
+      }
+    };
+    loadContent();
   }, [editor, workbenchContent]);
 
   return (
