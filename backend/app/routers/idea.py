@@ -120,6 +120,7 @@ OUTPUT REQUIREMENTS - Return a valid JSON object with exactly two keys:
    - System Architecture - describe in PROSE ONLY, no diagrams
    - API Endpoints - at least 5 key endpoints with methods and sample requests
    - Strategi Monetisasi - 2-3 revenue strategies
+   Every section will be heading 2 [##] and must be expanded with multiple paragraphs and deep technical details.
 
 CRITICAL JSON FORMAT for arrays:
 target_audience must be exactly like this:

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import interview, idea, ai
+from .routers import interview, idea
 
 app = FastAPI()
 
@@ -26,7 +26,6 @@ app.add_middleware(
 # Include Routers
 app.include_router(interview.router, prefix="/api/interview", tags=["Interview"])
 app.include_router(idea.router, prefix="/api/idea", tags=["Idea"])
-app.include_router(ai.router, prefix="/api/ai", tags=["AI"])
 
 @app.get("/")
 def read_root():
