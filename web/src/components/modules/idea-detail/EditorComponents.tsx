@@ -2,7 +2,8 @@
 
 "use client";
 
-import { type BlockNoteEditor, filterSuggestionItems } from "@blocknote/core";
+import { type BlockNoteEditor } from "@blocknote/core";
+import { filterSuggestionItems } from "@blocknote/core/extensions";
 import {
   FormattingToolbar,
   FormattingToolbarController,
@@ -16,12 +17,92 @@ import {
   getAISlashMenuItems,
   getDefaultAIMenuItems,
 } from "@blocknote/xl-ai";
+import { RiMagicFill } from "react-icons/ri";
+import { toast } from "sonner";
+import { api } from "@/lib/api-client";
 
 // Ganti dengan path import Anda yang benar
 import {
   addRelatedTopics,
   makeInformal,
 } from "@/components/shared/ai/CustomeAIMenuItems";
+
+/**
+ * Custom slash menu item: "Continue with AI"
+ * Calls our FastAPI backend to generate a continuation of the current text
+ */
+function getContinueWithAISlashItem(editor: BlockNoteEditor) {
+  return {
+    title: "Continue with AI",
+    subtext: "Let AI finish your sentence",
+    onItemClick: async () => {
+      // Get the current block's text content
+      const cursorPosition = editor.getTextCursorPosition();
+      const currentBlock = cursorPosition.block;
+
+      // Extract text from block content
+      let blockText = "";
+      if (currentBlock.content && Array.isArray(currentBlock.content)) {
+        blockText = currentBlock.content
+          .map((item: { type: string; text?: string }) =>
+            item.type === "text" ? item.text || "" : ""
+          )
+          .join("");
+      }
+
+      if (!blockText.trim()) {
+        toast.warning("No text to continue", {
+          description: "Please write some text first, then use this command.",
+        });
+        return;
+      }
+
+      // Show loading toast
+      const toastId = toast.loading("AI is thinking...", {
+        description: "Generating continuation for your text",
+      });
+
+      try {
+        // Call our FastAPI backend
+        const response = await api.generateAICompletion(blockText);
+
+        if (response.completion) {
+          // Insert the AI completion as a new block after current block
+          editor.insertBlocks(
+            [
+              {
+                type: "paragraph",
+                content: response.completion,
+              },
+            ],
+            currentBlock,
+            "after"
+          );
+
+          toast.success("AI continuation added!", {
+            id: toastId,
+            description: "The AI has continued your text.",
+          });
+        } else {
+          toast.error("No completion received", {
+            id: toastId,
+            description: "The AI did not return any text.",
+          });
+        }
+      } catch (error) {
+        console.error("AI completion error:", error);
+        toast.error("Failed to generate AI completion", {
+          id: toastId,
+          description:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        });
+      }
+    },
+    aliases: ["ai", "continue", "complete", "finish"],
+    group: "AI",
+    icon: <RiMagicFill size={18} />,
+  };
+}
 
 export function CustomAIMenu() {
   return (
@@ -77,6 +158,7 @@ export function SlashMenuWithAI({ editor }: { editor: BlockNoteEditor }) {
           [
             ...getDefaultReactSlashMenuItems(editor),
             ...getAISlashMenuItems(editor),
+            getContinueWithAISlashItem(editor),
           ],
           query
         )

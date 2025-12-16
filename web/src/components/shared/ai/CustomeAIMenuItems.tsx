@@ -1,6 +1,9 @@
 import { BlockNoteEditor } from "@blocknote/core";
-import { AIMenuSuggestionItem, getAIExtension } from "@blocknote/xl-ai";
+import { AIMenuSuggestionItem, AIExtension } from "@blocknote/xl-ai";
 import { RiApps2AddFill, RiEmotionHappyFill } from "react-icons/ri";
+
+// Helper function to get AI extension from editor
+const getAI = (editor: BlockNoteEditor) => editor.getExtension(AIExtension);
 
 // Custom item to make the text more informal.
 export const makeInformal = (
@@ -11,23 +14,13 @@ export const makeInformal = (
   aliases: ["informal", "make informal", "casual"],
   icon: <RiEmotionHappyFill size={18} />,
   onItemClick: async () => {
-    await getAIExtension(editor).callLLM({
+    await getAI(editor)?.invokeAI({
       userPrompt:
         "Give the selected text a more informal (casual) tone. Adapt the language used to the accepted sentence.",
       // Set to true to tell the LLM to specifically
       // use the selected content as context. Defaults
       // to false.
       useSelection: true,
-      // Sets what operations the LLM is allowed to do.
-      // In this case, we only want to allow updating
-      // the selected content, so only `update` is set
-      // to true. Defaults to `true` for all
-      // operations.
-      defaultStreamTools: {
-        add: false,
-        delete: false,
-        update: true,
-      },
     });
   },
   size: "small",
@@ -44,18 +37,9 @@ export const addRelatedTopics = (
   aliases: ["related topics", "find topics"],
   icon: <RiApps2AddFill size={18} />,
   onItemClick: async () => {
-    await getAIExtension(editor).callLLM({
+    await getAI(editor)?.invokeAI({
       userPrompt:
         "Think of some related topics to the current text and write a sentence about each.",
-      // Sets what operations the LLM is allowed to do.
-      // In this case, we only want to allow adding new
-      // content, so only `add` is set to true.
-      // Defaults to `true` for all operations.
-      defaultStreamTools: {
-        add: true,
-        delete: false,
-        update: false,
-      },
     });
   },
   size: "small",

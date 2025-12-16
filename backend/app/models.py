@@ -51,3 +51,7 @@ class BlueprintResponse(BaseModel):
 class GenerateDatabaseSchemaRequest(BaseModel):
     projectId: str
     projectContext: str
+
+class EditorCompletionRequest(BaseModel):
+    context: str
+    prompt: Optional[str] = None

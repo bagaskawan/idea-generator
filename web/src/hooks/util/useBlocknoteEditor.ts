@@ -3,15 +3,18 @@
 import { useCreateBlockNote } from "@blocknote/react";
 import { en } from "@blocknote/core/locales";
 import { en as aiEn } from "@blocknote/xl-ai/locales";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createAIExtension } from "@blocknote/xl-ai";
+import { AIExtension } from "@blocknote/xl-ai";
+import { DefaultChatTransport } from "ai";
 
-// Konfigurasi AI di luar hook agar tidak dibuat ulang pada setiap render
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY!,
+// Backend API URL - adjust for production
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// Konfigurasi AI Extension - menggunakan backend untuk LLM calls
+const aiExtension = AIExtension({
+  transport: new DefaultChatTransport({
+    api: `${API_BASE_URL}/api/ai/chat`,
+  }),
 });
-const model = google("gemini-2.5-flash");
-const aiExtension = createAIExtension({ model });
 
 /**
  * Custom hook untuk membuat dan mengonfigurasi editor BlockNote dengan fitur AI.

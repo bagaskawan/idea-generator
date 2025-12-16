@@ -47,4 +47,7 @@ export const api = {
 
   generateDatabaseSchema: (data: any) =>
     fetchFromBackend("/api/idea/generate-database-schema", "POST", data),
+
+  generateAICompletion: (context: string, prompt?: string) =>
+    fetchFromBackend("/api/ai/editor-completion", "POST", { context, prompt }),
 };

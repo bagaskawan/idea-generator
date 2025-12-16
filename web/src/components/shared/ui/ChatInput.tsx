@@ -76,7 +76,7 @@ export function ChatInput({
           className={cn(
             "w-full px-4 py-3 pr-12 bg-transparent resize-none outline-none text-sm md:text-base",
             "placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed",
-            "max-h-[200px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+            "max-h-[200px] overflow-y-auto scrollbar-none"
           )}
         />
         <Button
@@ -84,7 +84,7 @@ export function ChatInput({
           size="icon"
           onClick={onSubmit}
           disabled={disabled || !value.trim()}
-          className="absolute right-2 bottom-2 h-8 w-8 rounded-lg"
+          className="absolute right-4 bottom-2 h-8 w-8 rounded-lg"
         >
           <Send className="h-4 w-4" />
         </Button>

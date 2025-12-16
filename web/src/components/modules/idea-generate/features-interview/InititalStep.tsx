@@ -36,7 +36,7 @@ export const InitialStep = ({
             name="interest"
             defaultValue={defaultInterest}
             placeholder="Make a Travel App"
-            className="h-14 px-6 text-lg rounded-full border-2"
+            className="h-14 px-6 text-lg rounded-full border-2 pr-16"
             disabled={isLoading}
             autoFocus
           />
