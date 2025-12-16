@@ -192,8 +192,6 @@ IMPORTANT: You MUST use the applyDocumentOperations tool to make changes. Respon
                         parsed_args = {}
                     
                     # Emit tool call events per AI SDK v5 protocol
-                    # For client-side tools like BlockNote's applyDocumentOperations,
-                    # we only send input events. The client executes the tool and handles output.
                     
                     # 1. Tool input start - indicates tool call beginning
                     yield f"data: {json.dumps({'type': 'tool-input-start', 'toolCallId': tool_call_id, 'toolName': tool_name})}\n\n"
@@ -201,10 +199,11 @@ IMPORTANT: You MUST use the applyDocumentOperations tool to make changes. Respon
                     # 2. Tool input available - complete input is ready for client-side execution
                     yield f"data: {json.dumps({'type': 'tool-input-available', 'toolCallId': tool_call_id, 'toolName': tool_name, 'input': parsed_args})}\n\n"
                     
-                    # Note: Do NOT send tool-output-available here!
-                    # BlockNote AI executes applyDocumentOperations client-side and handles output internally.
+                    # 3. Tool output available - BlockNote AI needs this to complete the tool call flow
+                    #    For client-side tools, we acknowledge with a success result
+                    yield f"data: {json.dumps({'type': 'tool-output-available', 'toolCallId': tool_call_id, 'output': {'success': True}})}\n\n"
                     
-                    logger.info(f"[BlockNote AI] Sent tool input events for {tool_name}")
+                    logger.info(f"[BlockNote AI] Sent complete tool call sequence for {tool_name}")
             else:
                 logger.warning(f"[BlockNote AI] No tool calls in response despite having tools")
             
