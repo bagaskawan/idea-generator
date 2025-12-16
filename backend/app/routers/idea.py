@@ -13,7 +13,7 @@ router = APIRouter()
 
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-model_llm = "openai/gpt-oss-120b"
+model_llm = "llama-3.3-70b-versatile"  # Valid Groq model (same as ai.py)
 
 supabase_url = os.getenv("SUPABASE_URL")
 supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_KEY")
