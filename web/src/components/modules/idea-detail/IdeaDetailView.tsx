@@ -114,7 +114,7 @@ export default function IdeaDetailView({ id }: IdeaDetailViewProps) {
           newHeadings.push({
             id: block.id,
             text: getBlockText(block),
-            level: block.props.level,
+            level: block.props.level as 1 | 2 | 3 | 4 | 5 | 6,
           });
         }
       }
