@@ -148,3 +148,38 @@ export interface HeadingItem {
   text: string;
   level: 1 | 2 | 3 | 4 | 5 | 6;
 }
+
+// Guide Types
+export interface GuideContentBlock {
+  id: string;
+  type: "text" | "code" | "terminal" | "tip";
+  content: string;
+  language?: string;
+  filename?: string;
+  display_order: number;
+}
+
+export interface GuideTask {
+  id: string;
+  title: string;
+  description?: string;
+  estimated_time?: string;
+  display_order: number;
+  content_blocks: GuideContentBlock[];
+  is_completed: boolean;
+}
+
+export interface GuideCategory {
+  id: string;
+  name: string;
+  icon?: string;
+  display_order: number;
+  tasks: GuideTask[];
+}
+
+export interface GuideData {
+  categories: GuideCategory[];
+  total_tasks: number;
+  completed_tasks: number;
+  last_updated?: string | null;
+}

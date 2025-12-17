@@ -72,4 +72,27 @@ export const api = {
 
   getFlowchart: (projectId: string) =>
     fetchFromBackend(`/api/idea/flowchart/${projectId}`, "GET"),
+
+  // Guide endpoints
+  getGuide: (projectId: string, userId?: string) =>
+    fetchFromBackend(
+      `/api/guide/${projectId}${userId ? `?user_id=${userId}` : ""}`,
+      "GET"
+    ),
+
+  generateGuide: (projectId: string, workbenchContent: string) =>
+    fetchFromBackend(`/api/guide/generate/${projectId}`, "POST", {
+      workbenchContent,
+    }),
+
+  updateTaskProgress: (
+    taskId: string,
+    projectId: string,
+    isCompleted: boolean
+  ) =>
+    fetchFromBackend("/api/guide/progress", "POST", {
+      taskId,
+      projectId,
+      isCompleted,
+    }),
 };

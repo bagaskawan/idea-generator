@@ -6,6 +6,7 @@ import {
   Trash2,
   File,
   GitBranch,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -218,6 +219,10 @@ export default function IdeaDetailHeader({
               <span>
                 {hasFlowchart ? "View Flowchart" : "Generate Flowchart"}
               </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => router.push(`/idea/${id}/guide`)}>
+              <BookOpen className="w-4 h-4 mr-2" />
+              <span>Implementation Guide</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={(e) => {

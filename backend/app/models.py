@@ -55,3 +55,42 @@ class GenerateDatabaseSchemaRequest(BaseModel):
 class EditorCompletionRequest(BaseModel):
     context: str
     prompt: Optional[str] = None
+
+# Guide Models
+class GenerateGuideRequest(BaseModel):
+    workbenchContent: str
+
+class TaskProgressRequest(BaseModel):
+    taskId: str
+    projectId: str
+    isCompleted: bool
+
+class TaskContentBlockResponse(BaseModel):
+    id: str
+    type: str  # 'text', 'code', 'terminal', 'tip'
+    content: str
+    language: Optional[str] = None
+    filename: Optional[str] = None
+    display_order: int
+
+class TaskResponse(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    estimated_time: Optional[str] = None
+    display_order: int
+    content_blocks: List[TaskContentBlockResponse] = []
+    is_completed: bool = False
+
+class TaskCategoryResponse(BaseModel):
+    id: str
+    name: str
+    icon: Optional[str] = None
+    display_order: int
+    tasks: List[TaskResponse] = []
+
+class GuideResponse(BaseModel):
+    categories: List[TaskCategoryResponse]
+    total_tasks: int
+    completed_tasks: int
+
